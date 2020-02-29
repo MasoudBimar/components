@@ -1,7 +1,11 @@
 import {Directionality} from '@angular/cdk/bidi';
 import {ENTER, COMMA, TAB} from '@angular/cdk/keycodes';
 import {PlatformModule} from '@angular/cdk/platform';
-import {createKeyboardEvent, dispatchKeyboardEvent, dispatchEvent} from '@angular/cdk/testing';
+import {
+  createKeyboardEvent,
+  dispatchKeyboardEvent,
+  dispatchEvent,
+} from '@angular/cdk/testing/private';
 import {Component, DebugElement, ViewChild} from '@angular/core';
 import {async, ComponentFixture, TestBed, fakeAsync, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
@@ -44,14 +48,14 @@ describe('MatChipInput', () => {
     testChipInput = fixture.debugElement.componentInstance;
     fixture.detectChanges();
 
-    inputDebugElement = fixture.debugElement.query(By.directive(MatChipInput));
+    inputDebugElement = fixture.debugElement.query(By.directive(MatChipInput))!;
     chipInputDirective = inputDebugElement.injector.get<MatChipInput>(MatChipInput);
     inputNativeElement = inputDebugElement.nativeElement;
   }));
 
   describe('basic behavior', () => {
     it('emits the (chipEnd) on enter keyup', () => {
-      let ENTER_EVENT = createKeyboardEvent('keydown', ENTER, inputNativeElement);
+      let ENTER_EVENT = createKeyboardEvent('keydown', ENTER, undefined, inputNativeElement);
 
       spyOn(testChipInput, 'add');
 
@@ -134,6 +138,15 @@ describe('MatChipInput', () => {
       expect(listElement.getAttribute('tabindex')).toBe('0', 'Expected tabindex to remain 0');
     }));
 
+    it('should be aria-required if the chip list is required', () => {
+      expect(inputNativeElement.hasAttribute('aria-required')).toBe(false);
+
+      fixture.componentInstance.required = true;
+      fixture.detectChanges();
+
+      expect(inputNativeElement.getAttribute('aria-required')).toBe('true');
+    });
+
   });
 
   describe('[addOnBlur]', () => {
@@ -160,7 +173,7 @@ describe('MatChipInput', () => {
 
   describe('[separatorKeyCodes]', () => {
     it('does not emit (chipEnd) when a non-separator key is pressed', () => {
-      let ENTER_EVENT = createKeyboardEvent('keydown', ENTER, inputNativeElement);
+      let ENTER_EVENT = createKeyboardEvent('keydown', ENTER, undefined, inputNativeElement);
       spyOn(testChipInput, 'add');
 
       chipInputDirective.separatorKeyCodes = [COMMA];
@@ -171,7 +184,7 @@ describe('MatChipInput', () => {
     });
 
     it('emits (chipEnd) when a custom separator keys is pressed', () => {
-      let COMMA_EVENT = createKeyboardEvent('keydown', COMMA, inputNativeElement);
+      let COMMA_EVENT = createKeyboardEvent('keydown', COMMA, undefined, inputNativeElement);
       spyOn(testChipInput, 'add');
 
       chipInputDirective.separatorKeyCodes = [COMMA];
@@ -182,7 +195,7 @@ describe('MatChipInput', () => {
     });
 
     it('emits accepts the custom separator keys in a Set', () => {
-      let COMMA_EVENT = createKeyboardEvent('keydown', COMMA, inputNativeElement);
+      let COMMA_EVENT = createKeyboardEvent('keydown', COMMA, undefined, inputNativeElement);
       spyOn(testChipInput, 'add');
 
       chipInputDirective.separatorKeyCodes = new Set([COMMA]);
@@ -211,19 +224,20 @@ describe('MatChipInput', () => {
       testChipInput = fixture.debugElement.componentInstance;
       fixture.detectChanges();
 
-      inputDebugElement = fixture.debugElement.query(By.directive(MatChipInput));
+      inputDebugElement = fixture.debugElement.query(By.directive(MatChipInput))!;
       chipInputDirective = inputDebugElement.injector.get<MatChipInput>(MatChipInput);
       inputNativeElement = inputDebugElement.nativeElement;
 
       spyOn(testChipInput, 'add');
       fixture.detectChanges();
 
-      chipInputDirective._keydown(createKeyboardEvent('keydown', COMMA, inputNativeElement));
+      chipInputDirective._keydown(
+          createKeyboardEvent('keydown', COMMA, undefined, inputNativeElement));
       expect(testChipInput.add).toHaveBeenCalled();
     });
 
     it('should not emit the chipEnd event if a separator is pressed with a modifier key', () => {
-      const ENTER_EVENT = createKeyboardEvent('keydown', ENTER, inputNativeElement);
+      const ENTER_EVENT = createKeyboardEvent('keydown', ENTER, undefined, inputNativeElement);
       Object.defineProperty(ENTER_EVENT, 'shiftKey', {get: () => true});
       spyOn(testChipInput, 'add');
 
@@ -240,7 +254,7 @@ describe('MatChipInput', () => {
 @Component({
   template: `
     <mat-form-field>
-      <mat-chip-list #chipList>
+      <mat-chip-list #chipList [required]="required">
         <mat-chip>Hello</mat-chip>
         <input matInput [matChipInputFor]="chipList"
                   [matChipInputAddOnBlur]="addOnBlur"
@@ -251,8 +265,9 @@ describe('MatChipInput', () => {
   `
 })
 class TestChipInput {
-  @ViewChild(MatChipList, {static: false}) chipListInstance: MatChipList;
-  addOnBlur: boolean = false;
+  @ViewChild(MatChipList) chipListInstance: MatChipList;
+  addOnBlur = false;
+  required = false;
   placeholder = '';
 
   add(_: MatChipInputEvent) {

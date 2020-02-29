@@ -20,14 +20,18 @@ import {
   ElementRef,
   NgZone,
 } from '@angular/core';
-import {MatDrawer, MatDrawerContainer, MatDrawerContent} from './drawer';
+import {MatDrawer, MatDrawerContainer, MatDrawerContent, MAT_DRAWER_CONTAINER} from './drawer';
 import {matDrawerAnimations} from './drawer-animations';
-import {coerceBooleanProperty, coerceNumberProperty} from '@angular/cdk/coercion';
+import {
+  BooleanInput,
+  coerceBooleanProperty,
+  coerceNumberProperty,
+  NumberInput
+} from '@angular/cdk/coercion';
 import {ScrollDispatcher} from '@angular/cdk/scrolling';
 
 
 @Component({
-  moduleId: module.id,
   selector: 'mat-sidenav-content',
   template: '<ng-content></ng-content>',
   host: {
@@ -51,7 +55,6 @@ export class MatSidenavContent extends MatDrawerContent {
 
 
 @Component({
-  moduleId: module.id,
   selector: 'mat-sidenav',
   exportAs: 'matSidenav',
   templateUrl: 'drawer.html',
@@ -65,6 +68,7 @@ export class MatSidenavContent extends MatDrawerContent {
     '[class.mat-drawer-over]': 'mode === "over"',
     '[class.mat-drawer-push]': 'mode === "push"',
     '[class.mat-drawer-side]': 'mode === "side"',
+    '[class.mat-drawer-opened]': 'opened',
     '[class.mat-sidenav-fixed]': 'fixedInViewport',
     '[style.top.px]': 'fixedInViewport ? fixedTopGap : null',
     '[style.bottom.px]': 'fixedInViewport ? fixedBottomGap : null',
@@ -96,11 +100,14 @@ export class MatSidenav extends MatDrawer {
   get fixedBottomGap(): number { return this._fixedBottomGap; }
   set fixedBottomGap(value) { this._fixedBottomGap = coerceNumberProperty(value); }
   private _fixedBottomGap = 0;
+
+  static ngAcceptInputType_fixedInViewport: BooleanInput;
+  static ngAcceptInputType_fixedTopGap: NumberInput;
+  static ngAcceptInputType_fixedBottomGap: NumberInput;
 }
 
 
 @Component({
-  moduleId: module.id,
   selector: 'mat-sidenav-container',
   exportAs: 'matSidenavContainer',
   templateUrl: 'sidenav-container.html',
@@ -111,8 +118,20 @@ export class MatSidenav extends MatDrawer {
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  providers: [{
+    provide: MAT_DRAWER_CONTAINER,
+    useExisting: MatSidenavContainer
+  }]
+
 })
 export class MatSidenavContainer extends MatDrawerContainer {
-  @ContentChildren(MatSidenav) _drawers: QueryList<MatSidenav>;
-  @ContentChild(MatSidenavContent, {static: false}) _content: MatSidenavContent;
+  @ContentChildren(MatSidenav, {
+    // We need to use `descendants: true`, because Ivy will no longer match
+    // indirect descendants if it's left as false.
+    descendants: true
+  })
+  _allDrawers: QueryList<MatSidenav>;
+
+  @ContentChild(MatSidenavContent) _content: MatSidenavContent;
+  static ngAcceptInputType_hasBackdrop: BooleanInput;
 }

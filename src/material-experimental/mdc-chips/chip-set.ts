@@ -6,7 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {coerceBooleanProperty} from '@angular/cdk/coercion';
+import {Directionality} from '@angular/cdk/bidi';
+import {BooleanInput, coerceBooleanProperty} from '@angular/cdk/coercion';
 import {
   AfterContentInit,
   AfterViewInit,
@@ -17,18 +18,15 @@ import {
   ElementRef,
   Input,
   OnDestroy,
+  Optional,
   QueryList,
   ViewEncapsulation
 } from '@angular/core';
+import {HasTabIndex, HasTabIndexCtor, mixinTabIndex} from '@angular/material/core';
 import {MDCChipSetAdapter, MDCChipSetFoundation} from '@material/chips';
-import {MatChip, MatChipEvent} from './chip';
 import {merge, Observable, Subject, Subscription} from 'rxjs';
 import {startWith, takeUntil} from 'rxjs/operators';
-import {
-  HasTabIndex,
-  HasTabIndexCtor,
-  mixinTabIndex,
-} from '@angular/material/core';
+import {MatChip, MatChipEvent} from './chip';
 
 
 let uid = 0;
@@ -51,7 +49,6 @@ const _MatChipSetMixinBase: HasTabIndexCtor & typeof MatChipSetBase =
  * Extended by MatChipListbox and MatChipGrid for different interaction patterns.
  */
 @Component({
-  moduleId: module.id,
   selector: 'mat-chip-set',
   template: '<ng-content></ng-content>',
   styleUrls: ['chips.css'],
@@ -97,9 +94,17 @@ export class MatChipSet extends _MatChipSetMixinBase implements AfterContentInit
     hasClass: (className) => this._hasMdcClass(className),
     // No-op. We keep track of chips via ContentChildren, which will be updated when a chip is
     // removed.
-    removeChip: () => {},
+    removeChipAtIndex: () => {},
     // No-op for base chip set. MatChipListbox overrides the adapter to provide this method.
-    setSelected: () => {}
+    selectChipAtIndex: () => {},
+    getIndexOfChipById: (id: string) => this._chips.toArray().findIndex(chip => chip.id === id),
+    focusChipPrimaryActionAtIndex: () => {},
+    focusChipTrailingActionAtIndex: () => {},
+    removeFocusFromChipAtIndex: () => {},
+    isRTL: () => !!this._dir && this._dir.value === 'rtl',
+    getChipListCount: () => this._chips.length,
+    // TODO(mmalerba): Implement using LiveAnnouncer.
+    announceMessage: () => {},
   };
 
   /** The aria-describedby attribute on the chip list for improved a11y. */
@@ -148,10 +153,15 @@ export class MatChipSet extends _MatChipSetMixinBase implements AfterContentInit
   }
 
   /** The chips that are part of this chip set. */
-  @ContentChildren(MatChip) _chips: QueryList<MatChip>;
+  @ContentChildren(MatChip, {
+    // We need to use `descendants: true`, because Ivy will no longer match
+    // indirect descendants if it's left as false.
+    descendants: true
+  }) _chips: QueryList<MatChip>;
 
   constructor(protected _elementRef: ElementRef,
-              protected _changeDetectorRef: ChangeDetectorRef) {
+              protected _changeDetectorRef: ChangeDetectorRef,
+              @Optional() protected _dir: Directionality) {
     super(_elementRef);
     this._chipSetFoundation = new MDCChipSetFoundation(this._chipSetAdapter);
   }
@@ -224,7 +234,11 @@ export class MatChipSet extends _MatChipSetMixinBase implements AfterContentInit
   /** Subscribes to chip removal events. */
   private _listenToChipsRemove() {
     this._chipRemoveSubscription = this.chipRemoveChanges.subscribe((event: MatChipEvent) => {
-       this._chipSetFoundation.handleChipRemoval(event.chip.id);
+       this._chipSetFoundation.handleChipRemoval({
+         chipId: event.chip.id,
+         // TODO(mmalerba): Add removal message.
+         removedAnnouncement: null,
+       });
     });
   }
 
@@ -246,7 +260,7 @@ export class MatChipSet extends _MatChipSetMixinBase implements AfterContentInit
   /** Subscribes to chip interaction events. */
   private _listenToChipsInteraction() {
     this._chipInteractionSubscription = this.chipInteractionChanges.subscribe((id: string) => {
-      this._chipSetFoundation.handleChipInteraction(id);
+      this._chipSetFoundation.handleChipInteraction({chipId: id});
     });
   }
 
@@ -286,7 +300,8 @@ export class MatChipSet extends _MatChipSetMixinBase implements AfterContentInit
     let currentElement = event.target as HTMLElement | null;
 
     while (currentElement && currentElement !== this._elementRef.nativeElement) {
-      if (currentElement.classList.contains('mdc-chip')) {
+      // Null check the classList, because IE and Edge don't support it on all elements.
+      if (currentElement.classList && currentElement.classList.contains('mdc-chip')) {
         return true;
       }
 
@@ -295,5 +310,6 @@ export class MatChipSet extends _MatChipSetMixinBase implements AfterContentInit
 
     return false;
   }
-}
 
+  static ngAcceptInputType_disabled: BooleanInput;
+}

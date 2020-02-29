@@ -23,11 +23,6 @@ import {
 } from '@angular-devkit/schematics';
 import {FileSystemSchematicContext} from '@angular-devkit/schematics/tools';
 import {Schema as ComponentOptions, Style} from '@schematics/angular/component/schema';
-import {
-  addDeclarationToModule,
-  addEntryComponentToModule,
-  addExportToModule,
-} from '@schematics/angular/utility/ast-utils';
 import {InsertChange} from '@schematics/angular/utility/change';
 import {getWorkspace} from '@schematics/angular/utility/config';
 import {buildRelativePath, findModuleFromOptions} from '@schematics/angular/utility/find-module';
@@ -36,9 +31,14 @@ import {buildDefaultPath} from '@schematics/angular/utility/project';
 import {validateHtmlSelector, validateName} from '@schematics/angular/utility/validation';
 import {readFileSync, statSync} from 'fs';
 import {dirname, join, resolve} from 'path';
+import * as ts from 'typescript';
+import {
+  addDeclarationToModule,
+  addEntryComponentToModule,
+  addExportToModule,
+} from '../utils/vendored-ast-utils';
 import {getProjectFromWorkspace} from './get-project';
 import {getDefaultComponentOptions} from './schematic-options';
-import {ts} from './version-agnostic-typescript';
 
 /**
  * List of style extensions which are CSS compatible. All supported CLI style extensions can be
@@ -72,9 +72,7 @@ function addDeclarationToNgModule(options: ComponentOptions): Rule {
     const classifiedName = strings.classify(`${options.name}Component`);
 
     const declarationChanges = addDeclarationToModule(
-      // TODO: TypeScript version mismatch due to @schematics/angular using a different version
-      // than Material. Cast to any to avoid the type assignment failure.
-      source as any,
+      source,
       modulePath,
       classifiedName,
       relativePath);
@@ -93,9 +91,7 @@ function addDeclarationToNgModule(options: ComponentOptions): Rule {
 
       const exportRecorder = host.beginUpdate(modulePath);
       const exportChanges = addExportToModule(
-        // TODO: TypeScript version mismatch due to @schematics/angular using a different version
-        // than Material. Cast to any to avoid the type assignment failure.
-        source as any,
+        source,
         modulePath,
         strings.classify(`${options.name}Component`),
         relativePath);
@@ -114,9 +110,7 @@ function addDeclarationToNgModule(options: ComponentOptions): Rule {
 
       const entryComponentRecorder = host.beginUpdate(modulePath);
       const entryComponentChanges = addEntryComponentToModule(
-        // TODO: TypeScript version mismatch due to @schematics/angular using a different version
-        // than Material. Cast to any to avoid the type assignment failure.
-        source as any,
+        source,
         modulePath,
         strings.classify(`${options.name}Component`),
         relativePath);

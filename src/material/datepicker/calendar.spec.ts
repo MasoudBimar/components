@@ -5,7 +5,7 @@ import {
   dispatchKeyboardEvent,
   dispatchMouseEvent,
   MockNgZone,
-} from '@angular/cdk/testing';
+} from '@angular/cdk/testing/private';
 import {Component, NgZone} from '@angular/core';
 import {async, ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {DateAdapter, MatNativeDateModule} from '@angular/material/core';
@@ -52,7 +52,7 @@ describe('MatCalendar', () => {
       fixture = TestBed.createComponent(StandardCalendar);
       fixture.detectChanges();
 
-      let calendarDebugElement = fixture.debugElement.query(By.directive(MatCalendar));
+      let calendarDebugElement = fixture.debugElement.query(By.directive(MatCalendar))!;
       calendarElement = calendarDebugElement.nativeElement;
       periodButton = calendarElement.querySelector('.mat-calendar-period-button') as HTMLElement;
 
@@ -283,6 +283,45 @@ describe('MatCalendar', () => {
       });
     });
 
+    it('should re-render the month view when the locale changes',
+      inject([DateAdapter], (adapter: DateAdapter<Date>) => {
+        fixture.detectChanges();
+        spyOn(calendarInstance.monthView, '_init').and.callThrough();
+
+        adapter.setLocale('bg-BG');
+        fixture.detectChanges();
+
+        expect(calendarInstance.monthView._init).toHaveBeenCalled();
+      }));
+
+    it('should re-render the year view when the locale changes',
+      inject([DateAdapter], (adapter: DateAdapter<Date>) => {
+        periodButton.click();
+        fixture.detectChanges();
+
+        (calendarElement.querySelector('.mat-calendar-body-active') as HTMLElement).click();
+        fixture.detectChanges();
+
+        spyOn(calendarInstance.yearView, '_init').and.callThrough();
+
+        adapter.setLocale('bg-BG');
+        fixture.detectChanges();
+
+        expect(calendarInstance.yearView._init).toHaveBeenCalled();
+      }));
+
+    it('should re-render the multi-year view when the locale changes',
+      inject([DateAdapter], (adapter: DateAdapter<Date>) => {
+        periodButton.click();
+        fixture.detectChanges();
+
+        spyOn(calendarInstance.multiYearView, '_init').and.callThrough();
+
+        adapter.setLocale('bg-BG');
+        fixture.detectChanges();
+
+        expect(calendarInstance.multiYearView._init).toHaveBeenCalled();
+      }));
   });
 
   describe('calendar with min and max date', () => {
@@ -294,7 +333,7 @@ describe('MatCalendar', () => {
     beforeEach(() => {
       fixture = TestBed.createComponent(CalendarWithMinMax);
 
-      let calendarDebugElement = fixture.debugElement.query(By.directive(MatCalendar));
+      let calendarDebugElement = fixture.debugElement.query(By.directive(MatCalendar))!;
       calendarElement = calendarDebugElement.nativeElement;
       calendarInstance = calendarDebugElement.componentInstance;
       testComponent = fixture.componentInstance;
@@ -450,7 +489,7 @@ describe('MatCalendar', () => {
       const dynamicFixture = TestBed.createComponent(CalendarWithSelectableMinDate);
       dynamicFixture.detectChanges();
 
-      const calendarDebugElement = dynamicFixture.debugElement.query(By.directive(MatCalendar));
+      const calendarDebugElement = dynamicFixture.debugElement.query(By.directive(MatCalendar))!;
       const disabledClass = 'mat-calendar-body-disabled';
       calendarElement = calendarDebugElement.nativeElement;
       calendarInstance = calendarDebugElement.componentInstance;
@@ -486,7 +525,7 @@ describe('MatCalendar', () => {
       fixture = TestBed.createComponent(CalendarWithDateFilter);
       fixture.detectChanges();
 
-      let calendarDebugElement = fixture.debugElement.query(By.directive(MatCalendar));
+      let calendarDebugElement = fixture.debugElement.query(By.directive(MatCalendar))!;
       calendarElement = calendarDebugElement.nativeElement;
       calendarInstance = calendarDebugElement.componentInstance;
       testComponent = fixture.componentInstance;

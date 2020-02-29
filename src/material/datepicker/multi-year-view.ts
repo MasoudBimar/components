@@ -29,11 +29,14 @@ import {
   Output,
   ViewChild,
   ViewEncapsulation,
+  OnDestroy,
 } from '@angular/core';
 import {DateAdapter} from '@angular/material/core';
 import {Directionality} from '@angular/cdk/bidi';
 import {MatCalendarBody, MatCalendarCell} from './calendar-body';
 import {createMissingDateImplError} from './datepicker-errors';
+import {Subscription} from 'rxjs';
+import {startWith} from 'rxjs/operators';
 
 export const yearsPerPage = 24;
 
@@ -44,14 +47,15 @@ export const yearsPerRow = 4;
  * @docs-private
  */
 @Component({
-  moduleId: module.id,
   selector: 'mat-multi-year-view',
   templateUrl: 'multi-year-view.html',
   exportAs: 'matMultiYearView',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class MatMultiYearView<D> implements AfterContentInit {
+export class MatMultiYearView<D> implements AfterContentInit, OnDestroy {
+  private _rerenderSubscription = Subscription.EMPTY;
+
   /** The date to display in this multi-year view (everything other than the year is ignored). */
   @Input()
   get activeDate(): D { return this._activeDate; }
@@ -106,7 +110,7 @@ export class MatMultiYearView<D> implements AfterContentInit {
   @Output() readonly activeDateChange: EventEmitter<D> = new EventEmitter<D>();
 
   /** The body of calendar table */
-  @ViewChild(MatCalendarBody, {static: false}) _matCalendarBody: MatCalendarBody;
+  @ViewChild(MatCalendarBody) _matCalendarBody: MatCalendarBody;
 
   /** Grid of calendar cells representing the currently displayed years. */
   _years: MatCalendarCell[][];
@@ -128,7 +132,13 @@ export class MatMultiYearView<D> implements AfterContentInit {
   }
 
   ngAfterContentInit() {
-    this._init();
+    this._rerenderSubscription = this._dateAdapter.localeChanges
+      .pipe(startWith(null))
+      .subscribe(() => this._init());
+  }
+
+  ngOnDestroy() {
+    this._rerenderSubscription.unsubscribe();
   }
 
   /** Initializes this multi-year view. */

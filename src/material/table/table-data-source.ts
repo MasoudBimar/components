@@ -34,6 +34,11 @@ const MAX_SAFE_INTEGER = 9007199254740991;
  * Allows for sort customization by overriding sortingDataAccessor, which defines how data
  * properties are accessed. Also allows for filter customization by overriding filterTermAccessor,
  * which defines how row data is converted to a string for filter matching.
+ *
+ * **Note:** This class is meant to be a simple data source to help you get started. As such
+ * it isn't equipped to handle some more advanced cases like robust i18n support or server-side
+ * interactions. If your app needs to support more advanced use cases, consider implementing your
+ * own `DataSource`.
  */
 export class MatTableDataSource<T> extends DataSource<T> {
   /** Stream that emits when a new data array is set on the data source. */
@@ -144,7 +149,7 @@ export class MatTableDataSource<T> extends DataSource<T> {
       let valueB = this.sortingDataAccessor(b, active);
 
       // If both valueA and valueB exist (truthy), then compare the two. Otherwise, check if
-      // one value exists while the other doesn't. In this case, existing value should come first.
+      // one value exists while the other doesn't. In this case, existing value should come last.
       // This avoids inconsistent results when comparing values to undefined/null.
       // If neither value exists, return 0 (equal).
       let comparatorResult = 0;
@@ -223,13 +228,13 @@ export class MatTableDataSource<T> extends DataSource<T> {
         observableOf(null);
     const dataStream = this._data;
     // Watch for base data or filter changes to provide a filtered set of data.
-    const filteredData = combineLatest(dataStream, this._filter)
+    const filteredData = combineLatest([dataStream, this._filter])
       .pipe(map(([data]) => this._filterData(data)));
     // Watch for filtered data or sort changes to provide an ordered set of data.
-    const orderedData = combineLatest(filteredData, sortChange)
+    const orderedData = combineLatest([filteredData, sortChange])
       .pipe(map(([data]) => this._orderData(data)));
     // Watch for ordered data or page changes to provide a paged set of data.
-    const paginatedData = combineLatest(orderedData, pageChange)
+    const paginatedData = combineLatest([orderedData, pageChange])
       .pipe(map(([data]) => this._pageData(data)));
     // Watched for paged data changes and send the result to the table to render.
     this._renderChangesSubscription.unsubscribe();

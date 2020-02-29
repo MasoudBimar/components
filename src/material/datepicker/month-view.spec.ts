@@ -11,7 +11,7 @@ import {
   SPACE,
   UP_ARROW,
 } from '@angular/cdk/keycodes';
-import {dispatchFakeEvent, dispatchKeyboardEvent} from '@angular/cdk/testing';
+import {dispatchFakeEvent, dispatchKeyboardEvent} from '@angular/cdk/testing/private';
 import {Component} from '@angular/core';
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 import {MatNativeDateModule} from '@angular/material/core';
@@ -54,7 +54,7 @@ describe('MatMonthView', () => {
       fixture = TestBed.createComponent(StandardMonthView);
       fixture.detectChanges();
 
-      let monthViewDebugElement = fixture.debugElement.query(By.directive(MatMonthView));
+      let monthViewDebugElement = fixture.debugElement.query(By.directive(MatMonthView))!;
       monthViewNativeElement = monthViewDebugElement.nativeElement;
       testComponent = fixture.componentInstance;
     });
@@ -101,6 +101,18 @@ describe('MatMonthView', () => {
       it('should set the correct role on the internal table node', () => {
         const table = monthViewNativeElement.querySelector('table')!;
         expect(table.getAttribute('role')).toBe('presentation');
+      });
+
+      it('should set the correct scope on the table headers', () => {
+        const nonDividerHeaders = monthViewNativeElement.querySelectorAll(
+            '.mat-calendar-table-header th:not(.mat-calendar-table-header-divider)');
+        const dividerHeader =
+            monthViewNativeElement.querySelector('.mat-calendar-table-header-divider')!;
+
+        expect(Array.from(nonDividerHeaders).every(header => {
+          return header.getAttribute('scope') === 'col';
+        })).toBe(true);
+        expect(dividerHeader.hasAttribute('scope')).toBe(false);
       });
 
       describe('calendar body', () => {
@@ -280,22 +292,37 @@ describe('MatMonthView', () => {
   });
 
   describe('month view with date filter', () => {
-    let fixture: ComponentFixture<MonthViewWithDateFilter>;
-    let monthViewNativeElement: Element;
-
-    beforeEach(() => {
-      fixture = TestBed.createComponent(MonthViewWithDateFilter);
+    it('should disable filtered dates', () => {
+      const fixture = TestBed.createComponent(MonthViewWithDateFilter);
       fixture.detectChanges();
 
-      let monthViewDebugElement = fixture.debugElement.query(By.directive(MatMonthView));
-      monthViewNativeElement = monthViewDebugElement.nativeElement;
-    });
-
-    it('should disable filtered dates', () => {
-      let cells = monthViewNativeElement.querySelectorAll('.mat-calendar-body-cell');
+      let cells = fixture.nativeElement.querySelectorAll('.mat-calendar-body-cell');
       expect(cells[0].classList).toContain('mat-calendar-body-disabled');
       expect(cells[1].classList).not.toContain('mat-calendar-body-disabled');
     });
+
+    it('should not call the date filter function if the date is before the min date', () => {
+      const fixture = TestBed.createComponent(MonthViewWithDateFilter);
+      const activeDate = fixture.componentInstance.activeDate;
+      const spy = spyOn(fixture.componentInstance, 'dateFilter').and.callThrough();
+      fixture.componentInstance.minDate =
+          new Date(activeDate.getFullYear() + 1, activeDate.getMonth(), activeDate.getDate());
+      fixture.detectChanges();
+
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it('should not call the date filter function if the date is after the max date', () => {
+      const fixture = TestBed.createComponent(MonthViewWithDateFilter);
+      const activeDate = fixture.componentInstance.activeDate;
+      const spy = spyOn(fixture.componentInstance, 'dateFilter').and.callThrough();
+      fixture.componentInstance.maxDate =
+          new Date(activeDate.getFullYear() - 1, activeDate.getMonth(), activeDate.getDate());
+      fixture.detectChanges();
+
+      expect(spy).not.toHaveBeenCalled();
+    });
+
   });
 
   describe('month view with custom date classes', () => {
@@ -306,7 +333,7 @@ describe('MatMonthView', () => {
       fixture = TestBed.createComponent(MonthViewWithDateClass);
       fixture.detectChanges();
 
-      let monthViewDebugElement = fixture.debugElement.query(By.directive(MatMonthView));
+      let monthViewDebugElement = fixture.debugElement.query(By.directive(MatMonthView))!;
       monthViewNativeElement = monthViewDebugElement.nativeElement;
     });
 
@@ -330,10 +357,17 @@ class StandardMonthView {
 
 
 @Component({
-  template: `<mat-month-view [activeDate]="activeDate" [dateFilter]="dateFilter"></mat-month-view>`
+  template: `
+    <mat-month-view
+      [activeDate]="activeDate"
+      [dateFilter]="dateFilter"
+      [minDate]="minDate"
+      [maxDate]="maxDate"></mat-month-view>`
 })
 class MonthViewWithDateFilter {
   activeDate = new Date(2017, JAN, 1);
+  minDate: Date | null = null;
+  maxDate: Date | null = null;
   dateFilter(date: Date) {
     return date.getDate() % 2 == 0;
   }

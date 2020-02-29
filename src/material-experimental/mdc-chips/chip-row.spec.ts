@@ -1,30 +1,30 @@
 import {Directionality} from '@angular/cdk/bidi';
 import {BACKSPACE, DELETE} from '@angular/cdk/keycodes';
-import {createKeyboardEvent, createFakeEvent, dispatchFakeEvent} from '@angular/cdk/testing';
+import {
+  createKeyboardEvent,
+  createFakeEvent,
+  dispatchFakeEvent,
+} from '@angular/cdk/testing/private';
 import {Component, DebugElement, ViewChild} from '@angular/core';
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
-import {MAT_RIPPLE_GLOBAL_OPTIONS, RippleGlobalOptions} from '@angular/material/core';
 import {By} from '@angular/platform-browser';
 import {Subject} from 'rxjs';
 import {MatChipEvent, MatChipGrid, MatChipRow, MatChipsModule} from './index';
 
 
-describe('Row Chips', () => {
+describe('MDC-based Row Chips', () => {
   let fixture: ComponentFixture<any>;
   let chipDebugElement: DebugElement;
   let chipNativeElement: HTMLElement;
   let chipInstance: MatChipRow;
-  let globalRippleOptions: RippleGlobalOptions;
 
   let dir = 'ltr';
 
   beforeEach(async(() => {
-    globalRippleOptions = {};
     TestBed.configureTestingModule({
       imports: [MatChipsModule],
       declarations: [SingleChip],
       providers: [
-        {provide: MAT_RIPPLE_GLOBAL_OPTIONS, useFactory: () => globalRippleOptions},
         {provide: Directionality, useFactory: () => ({
           value: dir,
           change: new Subject()
@@ -42,16 +42,10 @@ describe('Row Chips', () => {
       fixture = TestBed.createComponent(SingleChip);
       fixture.detectChanges();
 
-      chipDebugElement = fixture.debugElement.query(By.directive(MatChipRow));
+      chipDebugElement = fixture.debugElement.query(By.directive(MatChipRow))!;
       chipNativeElement = chipDebugElement.nativeElement;
       chipInstance = chipDebugElement.injector.get<MatChipRow>(MatChipRow);
       testComponent = fixture.debugElement.componentInstance;
-
-      document.body.appendChild(chipNativeElement);
-    });
-
-    afterEach(() => {
-      document.body.removeChild(chipNativeElement);
     });
 
     describe('basic behaviors', () => {
@@ -90,7 +84,8 @@ describe('Row Chips', () => {
         chipInstance.remove();
         fixture.detectChanges();
 
-        const fakeEvent = Object.assign(createFakeEvent('transitionend'), {propertyName: 'width'});
+        const fakeEvent = createFakeEvent('transitionend');
+        (fakeEvent as any).propertyName = 'width';
         chipNativeElement.dispatchEvent(fakeEvent);
 
         expect(testComponent.chipRemove).toHaveBeenCalledWith({chip: chipInstance});
@@ -119,8 +114,8 @@ describe('Row Chips', () => {
           chipInstance._keydown(DELETE_EVENT);
           fixture.detectChanges();
 
-          const fakeEvent = Object.assign(createFakeEvent('transitionend'),
-            {propertyName: 'width'});
+          const fakeEvent = createFakeEvent('transitionend');
+          (fakeEvent as any).propertyName = 'width';
           chipNativeElement.dispatchEvent(fakeEvent);
 
           expect(testComponent.chipRemove).toHaveBeenCalled();
@@ -134,8 +129,8 @@ describe('Row Chips', () => {
           chipInstance._keydown(BACKSPACE_EVENT);
           fixture.detectChanges();
 
-          const fakeEvent = Object.assign(createFakeEvent('transitionend'),
-            {propertyName: 'width'});
+          const fakeEvent = createFakeEvent('transitionend');
+          (fakeEvent as any).propertyName = 'width';
           chipNativeElement.dispatchEvent(fakeEvent);
 
           expect(testComponent.chipRemove).toHaveBeenCalled();
@@ -156,8 +151,8 @@ describe('Row Chips', () => {
           chipInstance._keydown(DELETE_EVENT);
           fixture.detectChanges();
 
-          const fakeEvent = Object.assign(createFakeEvent('transitionend'),
-            {propertyName: 'width'});
+          const fakeEvent = createFakeEvent('transitionend');
+          (fakeEvent as any).propertyName = 'width';
           chipNativeElement.dispatchEvent(fakeEvent);
 
           expect(testComponent.chipRemove).not.toHaveBeenCalled();
@@ -172,8 +167,8 @@ describe('Row Chips', () => {
           chipInstance._keydown(BACKSPACE_EVENT);
           fixture.detectChanges();
 
-          const fakeEvent = Object.assign(createFakeEvent('transitionend'),
-            {propertyName: 'width'});
+          const fakeEvent = createFakeEvent('transitionend');
+          (fakeEvent as any).propertyName = 'width';
           chipNativeElement.dispatchEvent(fakeEvent);
 
           expect(testComponent.chipRemove).not.toHaveBeenCalled();
@@ -190,11 +185,12 @@ describe('Row Chips', () => {
       });
 
       describe('focus management', () => {
-        it('sends focus to first grid cell on click', () => {
-          dispatchFakeEvent(chipNativeElement, 'click');
+        it('sends focus to first grid cell on mousedown', () => {
+          dispatchFakeEvent(chipNativeElement, 'mousedown');
           fixture.detectChanges();
 
-          expect(document.activeElement!.classList.contains('mat-chip-row-focusable-text-content'));
+          expect(document.activeElement!.classList.contains('mat-chip-row-focusable-text-content'))
+              .toBe(true);
         });
 
         it('emits focus only once for multiple focus() calls', () => {
@@ -229,7 +225,7 @@ describe('Row Chips', () => {
     </mat-chip-grid>`
 })
 class SingleChip {
-  @ViewChild(MatChipGrid, {static: false}) chipList: MatChipGrid;
+  @ViewChild(MatChipGrid) chipList: MatChipGrid;
   disabled: boolean = false;
   name: string = 'Test';
   color: string = 'primary';

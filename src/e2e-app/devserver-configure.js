@@ -4,6 +4,9 @@ require.config({
   paths: {
     'moment': 'moment/min/moment.min',
 
+    // Support for lazy-loading of component examples.
+    '@angular/components-examples': 'angular_material/src/components-examples',
+
     // MDC Web
     '@material/animation': '@material/animation/dist/mdc.animation',
     '@material/auto-init': '@material/auto-init/dist/mdc.autoInit',
@@ -37,6 +40,3 @@ require.config({
     '@material/top-app-bar': '@material/top-app-bar/dist/mdc.topAppBar',
   }
 });
-
-// Workaround until https://github.com/angular/components/issues/13883 has been addressed.
-var module = {id: ''};

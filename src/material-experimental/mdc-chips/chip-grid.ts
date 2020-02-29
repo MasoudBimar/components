@@ -7,8 +7,8 @@
  */
 
 import {Directionality} from '@angular/cdk/bidi';
-import {coerceBooleanProperty} from '@angular/cdk/coercion';
-import {BACKSPACE, TAB} from '@angular/cdk/keycodes';
+import {BooleanInput, coerceBooleanProperty} from '@angular/cdk/coercion';
+import {BACKSPACE, TAB, HOME, END} from '@angular/cdk/keycodes';
 import {
   AfterContentInit,
   AfterViewInit,
@@ -60,12 +60,13 @@ export class MatChipGridChange {
 class MatChipGridBase extends MatChipSet {
   constructor(_elementRef: ElementRef,
               _changeDetectorRef: ChangeDetectorRef,
+              _dir: Directionality,
               public _defaultErrorStateMatcher: ErrorStateMatcher,
               public _parentForm: NgForm,
               public _parentFormGroup: FormGroupDirective,
               /** @docs-private */
               public ngControl: NgControl) {
-    super(_elementRef, _changeDetectorRef);
+    super(_elementRef, _changeDetectorRef, _dir);
   }
 }
 const _MatChipGridMixinBase: CanUpdateErrorStateCtor & typeof MatChipGridBase =
@@ -76,7 +77,6 @@ const _MatChipGridMixinBase: CanUpdateErrorStateCtor & typeof MatChipGridBase =
  * the matChipInputFor directive.
  */
 @Component({
-  moduleId: module.id,
   selector: 'mat-chip-grid',
   template: '<ng-content></ng-content>',
   styleUrls: ['chips.css'],
@@ -87,7 +87,6 @@ const _MatChipGridMixinBase: CanUpdateErrorStateCtor & typeof MatChipGridBase =
     '[tabIndex]': '_chips && _chips.length === 0 ? -1 : tabIndex',
     // TODO: replace this binding with use of AriaDescriber
     '[attr.aria-describedby]': '_ariaDescribedby || null',
-    '[attr.aria-required]': 'required.toString()',
     '[attr.aria-disabled]': 'disabled.toString()',
     '[attr.aria-invalid]': 'errorState',
     '[class.mat-mdc-chip-list-disabled]': 'disabled',
@@ -237,14 +236,14 @@ export class MatChipGrid extends _MatChipGridMixinBase implements AfterContentIn
 
   constructor(_elementRef: ElementRef,
               _changeDetectorRef: ChangeDetectorRef,
-              @Optional() private _dir: Directionality,
+              @Optional() _dir: Directionality,
               @Optional() _parentForm: NgForm,
               @Optional() _parentFormGroup: FormGroupDirective,
               _defaultErrorStateMatcher: ErrorStateMatcher,
               /** @docs-private */
               @Optional() @Self() public ngControl: NgControl) {
-    super(_elementRef, _changeDetectorRef, _defaultErrorStateMatcher, _parentForm, _parentFormGroup,
-      ngControl);
+    super(_elementRef, _changeDetectorRef, _dir, _defaultErrorStateMatcher, _parentForm,
+        _parentFormGroup, ngControl);
     if (this.ngControl) {
       this.ngControl.valueAccessor = this;
     }
@@ -401,17 +400,27 @@ export class MatChipGrid extends _MatChipGridMixinBase implements AfterContentIn
   /** Handles custom keyboard events. */
   _keydown(event: KeyboardEvent) {
     const target = event.target as HTMLElement;
+    const keyCode = event.keyCode;
+    const manager = this._keyManager;
 
     // If they are on an empty input and hit backspace, focus the last chip
-    if (event.keyCode === BACKSPACE && this._isEmptyInput(target)) {
+    if (keyCode === BACKSPACE && this._isEmptyInput(target)) {
       if (this._chips.length) {
-        this._keyManager.setLastCellActive();
+        manager.setLastCellActive();
       }
       event.preventDefault();
-    } else if (event.keyCode === TAB && target.id !== this._chipInput!.id ) {
+    } else if (keyCode === TAB && target.id !== this._chipInput!.id ) {
       this._allowFocusEscape();
     } else if (this._originatesFromChip(event)) {
-      this._keyManager.onKeydown(event);
+      if (keyCode === HOME) {
+        manager.setFirstCellActive();
+        event.preventDefault();
+      } else if (keyCode === END) {
+        manager.setLastCellActive();
+        event.preventDefault();
+      } else {
+        manager.onKeydown(event);
+      }
     }
     this.stateChanges.next();
   }
@@ -513,11 +522,13 @@ export class MatChipGrid extends _MatChipGridMixinBase implements AfterContentIn
 
   /** Returns true if element is an input with no value. */
   private _isEmptyInput(element: HTMLElement): boolean {
-    if (element && element.nodeName.toLowerCase() === 'input') {
-      let input = element as HTMLInputElement;
-      return !input.value;
+    if (element && element.id === this._chipInput!.id) {
+      return this._chipInput.empty;
     }
 
     return false;
   }
+
+  static ngAcceptInputType_disabled: BooleanInput;
+  static ngAcceptInputType_required: BooleanInput;
 }

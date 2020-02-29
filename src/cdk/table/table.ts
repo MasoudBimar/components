@@ -7,7 +7,7 @@
  */
 
 import {Direction, Directionality} from '@angular/cdk/bidi';
-import {coerceBooleanProperty} from '@angular/cdk/coercion';
+import {BooleanInput, coerceBooleanProperty} from '@angular/cdk/coercion';
 import {CollectionViewer, DataSource, isDataSource} from '@angular/cdk/collections';
 import {Platform} from '@angular/cdk/platform';
 import {DOCUMENT} from '@angular/common';
@@ -37,7 +37,14 @@ import {
   ViewContainerRef,
   ViewEncapsulation
 } from '@angular/core';
-import {BehaviorSubject, Observable, of as observableOf, Subject, Subscription} from 'rxjs';
+import {
+  BehaviorSubject,
+  Observable,
+  of as observableOf,
+  Subject,
+  Subscription,
+  isObservable,
+} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 import {CdkColumnDef} from './cell';
 import {
@@ -152,7 +159,6 @@ export interface RenderRow<T> {
  * connect function that will return an Observable stream that emits the data array to render.
  */
 @Component({
-  moduleId: module.id,
   selector: 'cdk-table, table[cdk-table]',
   exportAs: 'cdkTable',
   template: CDK_TABLE_TEMPLATE,
@@ -217,28 +223,28 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
   /**
    * Column definitions that were defined outside of the direct content children of the table.
    * These will be defined when, e.g., creating a wrapper around the cdkTable that has
-   * column definitions as *it's* content child.
+   * column definitions as *its* content child.
    */
   private _customColumnDefs = new Set<CdkColumnDef>();
 
   /**
    * Data row definitions that were defined outside of the direct content children of the table.
    * These will be defined when, e.g., creating a wrapper around the cdkTable that has
-   * built-in data rows as *it's* content child.
+   * built-in data rows as *its* content child.
    */
   private _customRowDefs = new Set<CdkRowDef<T>>();
 
   /**
    * Header row definitions that were defined outside of the direct content children of the table.
    * These will be defined when, e.g., creating a wrapper around the cdkTable that has
-   * built-in header rows as *it's* content child.
+   * built-in header rows as *its* content child.
    */
   private _customHeaderRowDefs = new Set<CdkHeaderRowDef>();
 
   /**
    * Footer row definitions that were defined outside of the direct content children of the table.
    * These will be defined when, e.g., creating a wrapper around the cdkTable that has a
-   * built-in footer row as *it's* content child.
+   * built-in footer row as *its* content child.
    */
   private _customFooterRowDefs = new Set<CdkFooterRowDef>();
 
@@ -375,16 +381,20 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
    * The column definitions provided by the user that contain what the header, data, and footer
    * cells should render for each column.
    */
-  @ContentChildren(CdkColumnDef) _contentColumnDefs: QueryList<CdkColumnDef>;
+  @ContentChildren(CdkColumnDef, {descendants: true}) _contentColumnDefs: QueryList<CdkColumnDef>;
 
   /** Set of data row definitions that were provided to the table as content children. */
-  @ContentChildren(CdkRowDef) _contentRowDefs: QueryList<CdkRowDef<T>>;
+  @ContentChildren(CdkRowDef, {descendants: true}) _contentRowDefs: QueryList<CdkRowDef<T>>;
 
   /** Set of header row definitions that were provided to the table as content children. */
-  @ContentChildren(CdkHeaderRowDef) _contentHeaderRowDefs: QueryList<CdkHeaderRowDef>;
+  @ContentChildren(CdkHeaderRowDef, {
+    descendants: true
+  }) _contentHeaderRowDefs: QueryList<CdkHeaderRowDef>;
 
   /** Set of footer row definitions that were provided to the table as content children. */
-  @ContentChildren(CdkFooterRowDef) _contentFooterRowDefs: QueryList<CdkFooterRowDef>;
+  @ContentChildren(CdkFooterRowDef, {
+    descendants: true
+  }) _contentFooterRowDefs: QueryList<CdkFooterRowDef>;
 
   constructor(
       protected readonly _differs: IterableDiffers,
@@ -829,7 +839,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
 
     if (isDataSource(this.dataSource)) {
       dataStream = this.dataSource.connect(this);
-    } else if (this.dataSource instanceof Observable) {
+    } else if (isObservable(this.dataSource)) {
       dataStream = this.dataSource;
     } else if (Array.isArray(this.dataSource)) {
       dataStream = observableOf(this.dataSource);
@@ -1073,6 +1083,8 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
           this.updateStickyColumnStyles();
         });
   }
+
+  static ngAcceptInputType_multiTemplateDataRows: BooleanInput;
 }
 
 /** Utility function that gets a merged list of the entries in a QueryList and values of a Set. */

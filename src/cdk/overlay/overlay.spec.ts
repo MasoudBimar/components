@@ -10,7 +10,7 @@ import {
   NgZone,
 } from '@angular/core';
 import {Direction, Directionality} from '@angular/cdk/bidi';
-import {dispatchFakeEvent, MockNgZone} from '@angular/cdk/testing';
+import {MockNgZone, dispatchFakeEvent} from '@angular/cdk/testing/private';
 import {
   ComponentPortal,
   PortalModule,
@@ -418,6 +418,14 @@ describe('Overlay', () => {
     expect(() => overlayRef.addPanelClass('custom-class-two')).not.toThrowError();
   });
 
+  it('should not throw when trying to add or remove and empty string class', () => {
+    const overlayRef = overlay.create();
+    overlayRef.attach(componentPortal);
+
+    expect(() => overlayRef.addPanelClass('')).not.toThrow();
+    expect(() => overlayRef.removePanelClass('')).not.toThrow();
+  });
+
   describe('positioning', () => {
     let config: OverlayConfig;
 
@@ -434,6 +442,29 @@ describe('Overlay', () => {
       tick();
 
       expect(overlayContainerElement.querySelectorAll('.fake-positioned').length).toBe(1);
+    }));
+
+    it('should have the overlay in the DOM in position strategy when reattaching', fakeAsync(() => {
+      let overlayPresentInDom = false;
+
+      config.positionStrategy = {
+        attach: (ref: OverlayRef) => overlayPresentInDom = !!ref.hostElement.parentElement,
+        apply: () => {},
+        dispose: () => {}
+      };
+
+      const overlayRef = overlay.create(config);
+
+      overlayRef.attach(componentPortal);
+      expect(overlayPresentInDom).toBeTruthy('Expected host element to be attached to the DOM.');
+
+      overlayRef.detach();
+      zone.simulateZoneExit();
+      tick();
+
+      overlayRef.attach(componentPortal);
+
+      expect(overlayPresentInDom).toBeTruthy('Expected host element to be attached to the DOM.');
     }));
 
     it('should not apply the position if it detaches before the zone stabilizes', fakeAsync(() => {
@@ -972,7 +1003,7 @@ class PizzaMsg { }
 /** Test-bed component that contains a TempatePortal and an ElementRef. */
 @Component({template: `<ng-template cdk-portal>Cake</ng-template>`})
 class TestComponentWithTemplatePortals {
-  @ViewChild(CdkPortal, {static: false}) templatePortal: CdkPortal;
+  @ViewChild(CdkPortal) templatePortal: CdkPortal;
 
   constructor(public viewContainerRef: ViewContainerRef) { }
 }

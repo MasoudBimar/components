@@ -25,7 +25,6 @@ import {GridKeyManagerRow, NAVIGATION_KEYS} from './grid-key-manager';
  * the matChipInputFor directive.
  */
 @Component({
-  moduleId: module.id,
   selector: 'mat-chip-row, mat-basic-chip-row',
   templateUrl: 'chip-row.html',
   styleUrls: ['chips.css'],
@@ -42,7 +41,6 @@ import {GridKeyManagerRow, NAVIGATION_KEYS} from './grid-key-manager';
     '[tabIndex]': 'tabIndex',
     '(mousedown)': '_mousedown($event)',
     '(keydown)': '_keydown($event)',
-    '(transitionend)': '_chipFoundation.handleTransitionEnd($event)',
     '(focusin)': '_focusin()',
     '(focusout)': '_focusout()'
   },
@@ -58,7 +56,7 @@ export class MatChipRow extends MatChip implements AfterContentInit, AfterViewIn
    * The focusable wrapper element in the first gridcell, which contains all
    * chip content other than the remove icon.
    */
-  @ViewChild('chipContent', {static: false}) chipContent: ElementRef;
+  @ViewChild('chipContent') chipContent: ElementRef;
 
   /** The focusable grid cells for this row. Implemented as part of GridKeyManagerRow. */
   cells!: HTMLElement[];

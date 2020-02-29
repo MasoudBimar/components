@@ -9,10 +9,19 @@
 import {Component} from '@angular/core';
 
 @Component({
-  moduleId: module.id,
   selector: 'mdc-radio-demo',
   templateUrl: 'mdc-radio-demo.html',
   styleUrls: ['mdc-radio-demo.css'],
 })
 export class MdcRadioDemo {
+  isAlignEnd: boolean = false;
+  isDisabled: boolean = false;
+  isRequired: boolean = false;
+  favoriteSeason: string = 'Autumn';
+  seasonOptions = [
+    'Winter',
+    'Spring',
+    'Summer',
+    'Autumn',
+  ];
 }

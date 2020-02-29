@@ -1,10 +1,10 @@
 import {Directionality} from '@angular/cdk/bidi';
 import {SPACE} from '@angular/cdk/keycodes';
-import {createKeyboardEvent, dispatchFakeEvent} from '@angular/cdk/testing';
+import {createKeyboardEvent, dispatchFakeEvent} from '@angular/cdk/testing/private';
 import {Component, DebugElement, ViewChild} from '@angular/core';
 import {async, ComponentFixture, fakeAsync, flush, TestBed} from '@angular/core/testing';
-import {MAT_RIPPLE_GLOBAL_OPTIONS, RippleGlobalOptions} from '@angular/material/core';
 import {By} from '@angular/platform-browser';
+import {chipCssClasses} from '@material/chips';
 import {Subject} from 'rxjs';
 import {
   MatChipEvent,
@@ -15,22 +15,19 @@ import {
 } from './index';
 
 
-describe('Option Chips', () => {
+describe('MDC-based Option Chips', () => {
   let fixture: ComponentFixture<any>;
   let chipDebugElement: DebugElement;
   let chipNativeElement: HTMLElement;
   let chipInstance: MatChipOption;
-  let globalRippleOptions: RippleGlobalOptions;
 
   let dir = 'ltr';
 
   beforeEach(async(() => {
-    globalRippleOptions = {};
     TestBed.configureTestingModule({
       imports: [MatChipsModule],
       declarations: [SingleChip],
       providers: [
-        {provide: MAT_RIPPLE_GLOBAL_OPTIONS, useFactory: () => globalRippleOptions},
         {provide: Directionality, useFactory: () => ({
           value: dir,
           change: new Subject()
@@ -48,16 +45,10 @@ describe('Option Chips', () => {
       fixture = TestBed.createComponent(SingleChip);
       fixture.detectChanges();
 
-      chipDebugElement = fixture.debugElement.query(By.directive(MatChipOption));
+      chipDebugElement = fixture.debugElement.query(By.directive(MatChipOption))!;
       chipNativeElement = chipDebugElement.nativeElement;
       chipInstance = chipDebugElement.injector.get<MatChipOption>(MatChipOption);
       testComponent = fixture.debugElement.componentInstance;
-
-      document.body.appendChild(chipNativeElement);
-    });
-
-    afterEach(() => {
-      document.body.removeChild(chipNativeElement);
     });
 
     describe('basic behaviors', () => {
@@ -240,6 +231,16 @@ describe('Option Chips', () => {
           expect(chipNativeElement.getAttribute('aria-selected')).toBe('true');
         }));
 
+        it('should disable focus on the checkmark', fakeAsync(() => {
+          // The checkmark is only shown in multi selection mode.
+          testComponent.chipList.multiple = true;
+          flush();
+          fixture.detectChanges();
+
+          const checkmark = chipNativeElement.querySelector('.mdc-chip__checkmark-svg')!;
+          expect(checkmark.getAttribute('focusable')).toBe('false');
+        }));
+
       });
 
       describe('when selectable is false', () => {
@@ -275,6 +276,26 @@ describe('Option Chips', () => {
         expect(chipNativeElement.getAttribute('aria-disabled')).toBe('true');
       });
     });
+
+    it('should hide the leading icon when initialized as selected', () => {
+      // We need to recreate the fixture before change detection has
+      // run so we can capture the behavior we're testing for.
+      fixture.destroy();
+      fixture = TestBed.createComponent(SingleChip);
+      testComponent = fixture.debugElement.componentInstance;
+      testComponent.selected = true;
+      fixture.detectChanges();
+      chipDebugElement = fixture.debugElement.query(By.directive(MatChipOption))!;
+      chipNativeElement = chipDebugElement.nativeElement;
+      chipInstance = chipDebugElement.injector.get<MatChipOption>(MatChipOption);
+
+      const avatar = fixture.nativeElement.querySelector('.avatar');
+      expect(avatar.classList).toContain(chipCssClasses.HIDDEN_LEADING_ICON);
+    });
+
+    it('should have a focus indicator', () => {
+      expect(chipNativeElement.classList.contains('mat-mdc-focus-indicator')).toBe(true);
+    });
   });
 });
 
@@ -286,13 +307,14 @@ describe('Option Chips', () => {
                  [color]="color" [selected]="selected" [disabled]="disabled"
                  (focus)="chipFocus($event)" (destroyed)="chipDestroy($event)"
                  (selectionChange)="chipSelectionChange($event)">
+          <span class="avatar" matChipAvatar></span>
           {{name}}
         </mat-chip-option>
       </div>
     </mat-chip-listbox>`
 })
 class SingleChip {
-  @ViewChild(MatChipListbox, {static: false}) chipList: MatChipListbox;
+  @ViewChild(MatChipListbox) chipList: MatChipListbox;
   disabled: boolean = false;
   name: string = 'Test';
   color: string = 'primary';

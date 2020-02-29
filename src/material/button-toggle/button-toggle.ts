@@ -7,7 +7,7 @@
  */
 
 import {FocusMonitor} from '@angular/cdk/a11y';
-import {coerceBooleanProperty} from '@angular/cdk/coercion';
+import {BooleanInput, coerceBooleanProperty} from '@angular/cdk/coercion';
 import {SelectionModel} from '@angular/cdk/collections';
 import {
   AfterContentInit,
@@ -131,7 +131,11 @@ export class MatButtonToggleGroup implements ControlValueAccessor, OnInit, After
   _onTouched: () => any = () => {};
 
   /** Child button toggle buttons. */
-  @ContentChildren(forwardRef(() => MatButtonToggle)) _buttonToggles: QueryList<MatButtonToggle>;
+  @ContentChildren(forwardRef(() => MatButtonToggle), {
+    // Note that this would technically pick up toggles
+    // from nested groups, but that's not a case that we support.
+    descendants: true
+  }) _buttonToggles: QueryList<MatButtonToggle>;
 
   /** The appearance for all the buttons in the group. */
   @Input() appearance: MatButtonToggleAppearance;
@@ -364,6 +368,10 @@ export class MatButtonToggleGroup implements ControlValueAccessor, OnInit, After
     // it is used by Angular to sync up the two-way data binding.
     this.valueChange.emit(this.value);
   }
+
+  static ngAcceptInputType_disabled: BooleanInput;
+  static ngAcceptInputType_multiple: BooleanInput;
+  static ngAcceptInputType_vertical: BooleanInput;
 }
 
 // Boilerplate for applying mixins to the MatButtonToggle class.
@@ -374,7 +382,6 @@ const _MatButtonToggleMixinBase: CanDisableRippleCtor & typeof MatButtonToggleBa
 
 /** Single button inside of a toggle group. */
 @Component({
-  moduleId: module.id,
   selector: 'mat-button-toggle',
   templateUrl: 'button-toggle.html',
   styleUrls: ['button-toggle.css'],
@@ -387,7 +394,7 @@ const _MatButtonToggleMixinBase: CanDisableRippleCtor & typeof MatButtonToggleBa
     '[class.mat-button-toggle-checked]': 'checked',
     '[class.mat-button-toggle-disabled]': 'disabled',
     '[class.mat-button-toggle-appearance-standard]': 'appearance === "standard"',
-    'class': 'mat-button-toggle',
+    'class': 'mat-button-toggle mat-focus-indicator',
     // Always reset the tabindex to -1 so it doesn't conflict with the one on the `button`,
     // but can still receive focus from things like cdkFocusInitial.
     '[attr.tabindex]': '-1',
@@ -416,7 +423,7 @@ export class MatButtonToggle extends _MatButtonToggleMixinBase implements OnInit
   /** Type of the button toggle. Either 'radio' or 'checkbox'. */
   _type: ToggleType;
 
-  @ViewChild('button', {static: false}) _buttonElement: ElementRef<HTMLButtonElement>;
+  @ViewChild('button') _buttonElement: ElementRef<HTMLButtonElement>;
 
   /** The parent button toggle group (exclusive selection). Optional. */
   buttonToggleGroup: MatButtonToggleGroup;
@@ -523,8 +530,8 @@ export class MatButtonToggle extends _MatButtonToggleMixinBase implements OnInit
   }
 
   /** Focuses the button. */
-  focus(): void {
-    this._buttonElement.nativeElement.focus();
+  focus(options?: FocusOptions): void {
+    this._buttonElement.nativeElement.focus(options);
   }
 
   /** Checks the button toggle due to an interaction with the underlying native button. */
@@ -552,4 +559,10 @@ export class MatButtonToggle extends _MatButtonToggleMixinBase implements OnInit
     // Use `markForCheck` to explicit update button toggle's status.
     this._changeDetectorRef.markForCheck();
   }
+
+  static ngAcceptInputType_checked: BooleanInput;
+  static ngAcceptInputType_disabled: BooleanInput;
+  static ngAcceptInputType_vertical: BooleanInput;
+  static ngAcceptInputType_multiple: BooleanInput;
+  static ngAcceptInputType_disableRipple: BooleanInput;
 }

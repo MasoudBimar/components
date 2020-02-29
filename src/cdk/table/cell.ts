@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {coerceBooleanProperty} from '@angular/cdk/coercion';
+import {BooleanInput, coerceBooleanProperty} from '@angular/cdk/coercion';
 import {ContentChild, Directive, ElementRef, Input, TemplateRef} from '@angular/core';
 import {CanStick, CanStickCtor, mixinHasStickyInput} from './can-stick';
 
@@ -93,13 +93,13 @@ export class CdkColumnDef extends _CdkColumnDefBase implements CanStick {
   _stickyEnd: boolean = false;
 
   /** @docs-private */
-  @ContentChild(CdkCellDef, {static: false}) cell: CdkCellDef;
+  @ContentChild(CdkCellDef) cell: CdkCellDef;
 
   /** @docs-private */
-  @ContentChild(CdkHeaderCellDef, {static: false}) headerCell: CdkHeaderCellDef;
+  @ContentChild(CdkHeaderCellDef) headerCell: CdkHeaderCellDef;
 
   /** @docs-private */
-  @ContentChild(CdkFooterCellDef, {static: false}) footerCell: CdkFooterCellDef;
+  @ContentChild(CdkFooterCellDef) footerCell: CdkFooterCellDef;
 
   /**
    * Transformed version of the column name that can be used as part of a CSS classname. Excludes
@@ -107,6 +107,9 @@ export class CdkColumnDef extends _CdkColumnDefBase implements CanStick {
    * do not match are replaced by the '-' character.
    */
   cssClassFriendlyName: string;
+
+  static ngAcceptInputType_sticky: BooleanInput;
+  static ngAcceptInputType_stickyEnd: BooleanInput;
 }
 
 /** Base class for the cells. Adds a CSS classname that identifies the column it renders in. */

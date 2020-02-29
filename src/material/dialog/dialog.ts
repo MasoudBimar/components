@@ -14,7 +14,7 @@ import {
   OverlayRef,
   ScrollStrategy,
 } from '@angular/cdk/overlay';
-import {ComponentPortal, ComponentType, PortalInjector, TemplatePortal} from '@angular/cdk/portal';
+import {ComponentPortal, ComponentType, TemplatePortal} from '@angular/cdk/portal';
 import {Location} from '@angular/common';
 import {
   Inject,
@@ -25,6 +25,7 @@ import {
   Optional,
   SkipSelf,
   TemplateRef,
+  StaticProvider,
 } from '@angular/core';
 import {defer, Observable, of as observableOf, Subject} from 'rxjs';
 import {startWith} from 'rxjs/operators';
@@ -84,15 +85,6 @@ export class MatDialog implements OnDestroy {
     return this._parentDialog ? this._parentDialog.afterOpened : this._afterOpenedAtThisLevel;
   }
 
-  /**
-   * Stream that emits when a dialog has been opened.
-   * @deprecated Use `afterOpened` instead.
-   * @breaking-change 8.0.0
-   */
-  get afterOpen(): Subject<MatDialogRef<any>> {
-    return this.afterOpened;
-  }
-
   get _afterAllClosed(): Subject<void> {
     const parent = this._parentDialog;
     return parent ? parent._afterAllClosed : this._afterAllClosedAtThisLevel;
@@ -110,7 +102,11 @@ export class MatDialog implements OnDestroy {
   constructor(
       private _overlay: Overlay,
       private _injector: Injector,
-      @Optional() private _location: Location,
+      /**
+       * @deprecated `_location` parameter to be removed.
+       * @breaking-change 10.0.0
+       */
+      @Optional() _location: Location,
       @Optional() @Inject(MAT_DIALOG_DEFAULT_OPTIONS) private _defaultOptions: MatDialogConfig,
       @Inject(MAT_DIALOG_SCROLL_STRATEGY) scrollStrategy: any,
       @Optional() @SkipSelf() private _parentDialog: MatDialog,
@@ -220,9 +216,11 @@ export class MatDialog implements OnDestroy {
    */
   private _attachDialogContainer(overlay: OverlayRef, config: MatDialogConfig): MatDialogContainer {
     const userInjector = config && config.viewContainerRef && config.viewContainerRef.injector;
-    const injector = new PortalInjector(userInjector || this._injector, new WeakMap([
-      [MatDialogConfig, config]
-    ]));
+    const injector = Injector.create({
+      parent: userInjector || this._injector,
+      providers: [{provide: MatDialogConfig, useValue: config}]
+    });
+
     const containerPortal = new ComponentPortal(MatDialogContainer,
         config.viewContainerRef, injector, config.componentFactoryResolver);
     const containerRef = overlay.attach<MatDialogContainer>(containerPortal);
@@ -248,7 +246,7 @@ export class MatDialog implements OnDestroy {
     // Create a reference to the dialog we're creating in order to give the user a handle
     // to modify and close it.
     const dialogRef =
-        new MatDialogRef<T, R>(overlayRef, dialogContainer, this._location, config.id);
+        new MatDialogRef<T, R>(overlayRef, dialogContainer, config.id);
 
     // When the dialog backdrop is clicked, we want to close it.
     if (config.hasBackdrop) {
@@ -262,11 +260,11 @@ export class MatDialog implements OnDestroy {
     if (componentOrTemplateRef instanceof TemplateRef) {
       dialogContainer.attachTemplatePortal(
         new TemplatePortal<T>(componentOrTemplateRef, null!,
-          <any>{ $implicit: config.data, dialogRef }));
+          <any>{$implicit: config.data, dialogRef}));
     } else {
       const injector = this._createInjector<T>(config, dialogRef, dialogContainer);
       const contentRef = dialogContainer.attachComponentPortal<T>(
-          new ComponentPortal(componentOrTemplateRef, undefined, injector));
+          new ComponentPortal(componentOrTemplateRef, config.viewContainerRef, injector));
       dialogRef.componentInstance = contentRef.instance;
     }
 
@@ -288,7 +286,7 @@ export class MatDialog implements OnDestroy {
   private _createInjector<T>(
       config: MatDialogConfig,
       dialogRef: MatDialogRef<T>,
-      dialogContainer: MatDialogContainer): PortalInjector {
+      dialogContainer: MatDialogContainer): Injector {
 
     const userInjector = config && config.viewContainerRef && config.viewContainerRef.injector;
 
@@ -296,21 +294,21 @@ export class MatDialog implements OnDestroy {
     // content are created out of the same ViewContainerRef and as such, are siblings for injector
     // purposes. To allow the hierarchy that is expected, the MatDialogContainer is explicitly
     // added to the injection tokens.
-    const injectionTokens = new WeakMap<any, any>([
-      [MatDialogContainer, dialogContainer],
-      [MAT_DIALOG_DATA, config.data],
-      [MatDialogRef, dialogRef]
-    ]);
+    const providers: StaticProvider[] = [
+      {provide: MatDialogContainer, useValue: dialogContainer},
+      {provide: MAT_DIALOG_DATA, useValue: config.data},
+      {provide: MatDialogRef, useValue: dialogRef}
+    ];
 
     if (config.direction &&
         (!userInjector || !userInjector.get<Directionality | null>(Directionality, null))) {
-      injectionTokens.set(Directionality, {
-        value: config.direction,
-        change: observableOf()
+      providers.push({
+        provide: Directionality,
+        useValue: {value: config.direction, change: observableOf()}
       });
     }
 
-    return new PortalInjector(userInjector || this._injector, injectionTokens);
+    return Injector.create({parent: userInjector || this._injector, providers});
   }
 
   /**

@@ -1,7 +1,7 @@
 import {async, TestBed, fakeAsync, tick} from '@angular/core/testing';
 import {Component, QueryList, ViewChildren} from '@angular/core';
 import {defaultRippleAnimationConfig} from '@angular/material/core';
-import {dispatchMouseEvent} from '@angular/cdk/testing';
+import {dispatchMouseEvent} from '@angular/cdk/testing/private';
 import {By} from '@angular/platform-browser';
 import {MatListItem, MatListModule} from './index';
 
@@ -16,7 +16,7 @@ describe('MatList', () => {
         ListWithOneAnchorItem, ListWithOneItem, ListWithTwoLineItem, ListWithThreeLineItem,
         ListWithAvatar, ListWithItemWithCssClass, ListWithDynamicNumberOfLines,
         ListWithMultipleItems, ListWithManyLines, NavListWithOneAnchorItem, ActionListWithoutType,
-        ActionListWithType, ListWithIndirectDescendantLines
+        ActionListWithType, ListWithIndirectDescendantLines, ListWithDisabledItems,
       ],
     });
 
@@ -25,9 +25,13 @@ describe('MatList', () => {
 
   it('should not apply any additional class to a list without lines', () => {
     const fixture = TestBed.createComponent(ListWithOneItem);
-    const listItem = fixture.debugElement.query(By.css('mat-list-item'));
+    const listItem = fixture.debugElement.query(By.css('mat-list-item'))!;
     fixture.detectChanges();
-    expect(listItem.nativeElement.className).toBe('mat-list-item');
+    expect(listItem.nativeElement.classList.length).toBe(2);
+    expect(listItem.nativeElement.classList).toContain('mat-list-item');
+
+    // This spec also ensures the focus indicator is present.
+    expect(listItem.nativeElement.classList).toContain('mat-focus-indicator');
   });
 
   it('should apply mat-2-line class to lists with two lines', () => {
@@ -79,10 +83,11 @@ describe('MatList', () => {
     fixture.debugElement.componentInstance.showThirdLine = false;
     fixture.detectChanges();
 
-    const listItem = fixture.debugElement.children[0].query(By.css('mat-list-item'));
-    expect(listItem.nativeElement.classList.length).toBe(2);
+    const listItem = fixture.debugElement.children[0].query(By.css('mat-list-item'))!;
+    expect(listItem.nativeElement.classList.length).toBe(3);
     expect(listItem.nativeElement.classList).toContain('mat-2-line');
     expect(listItem.nativeElement.classList).toContain('mat-list-item');
+    expect(listItem.nativeElement.classList).toContain('mat-focus-indicator');
 
     fixture.debugElement.componentInstance.showThirdLine = true;
     fixture.detectChanges();
@@ -94,7 +99,7 @@ describe('MatList', () => {
     fixture.detectChanges();
 
     const list = fixture.debugElement.children[0];
-    const listItem = fixture.debugElement.children[0].query(By.css('mat-list-item'));
+    const listItem = fixture.debugElement.children[0].query(By.css('mat-list-item'))!;
     expect(list.nativeElement.getAttribute('role')).toBeNull('Expect mat-list no role');
     expect(listItem.nativeElement.getAttribute('role')).toBeNull('Expect mat-list-item no role');
   });
@@ -167,7 +172,7 @@ describe('MatList', () => {
     const fixture = TestBed.createComponent(ActionListWithoutType);
     fixture.detectChanges();
 
-    const listItemEl = fixture.debugElement.query(By.css('.mat-list-item'));
+    const listItemEl = fixture.debugElement.query(By.css('.mat-list-item'))!;
     expect(listItemEl.nativeElement.getAttribute('type')).toBe('button');
   });
 
@@ -175,7 +180,7 @@ describe('MatList', () => {
     const fixture = TestBed.createComponent(ActionListWithType);
     fixture.detectChanges();
 
-    const listItemEl = fixture.debugElement.query(By.css('.mat-list-item'));
+    const listItemEl = fixture.debugElement.query(By.css('.mat-list-item'))!;
     expect(listItemEl.nativeElement.getAttribute('type')).toBe('submit');
   });
 
@@ -275,8 +280,40 @@ describe('MatList', () => {
     expect(listItems[0].nativeElement.className).toContain('mat-2-line');
     expect(listItems[1].nativeElement.className).toContain('mat-2-line');
   });
-});
 
+  it('should be able to disable a single list item', () => {
+    const fixture = TestBed.createComponent(ListWithDisabledItems);
+    const listItems: HTMLElement[] =
+        Array.from(fixture.nativeElement.querySelectorAll('mat-list-item'));
+    fixture.detectChanges();
+
+    expect(listItems.map(item => {
+      return item.classList.contains('mat-list-item-disabled');
+    })).toEqual([false, false, false]);
+
+    fixture.componentInstance.firstItemDisabled = true;
+    fixture.detectChanges();
+
+    expect(listItems.map(item => {
+      return item.classList.contains('mat-list-item-disabled');
+    })).toEqual([true, false, false]);
+  });
+
+  it('should be able to disable the entire list', () => {
+    const fixture = TestBed.createComponent(ListWithDisabledItems);
+    const listItems: HTMLElement[] =
+        Array.from(fixture.nativeElement.querySelectorAll('mat-list-item'));
+    fixture.detectChanges();
+
+    expect(listItems.every(item => item.classList.contains('mat-list-item-disabled'))).toBe(false);
+
+    fixture.componentInstance.listDisabled = true;
+    fixture.detectChanges();
+
+    expect(listItems.every(item => item.classList.contains('mat-list-item-disabled'))).toBe(true);
+  });
+
+});
 
 class BaseTestList {
   items: any[] = [
@@ -424,4 +461,16 @@ class ListWithMultipleItems extends BaseTestList { }
   </mat-list>`
 })
 class ListWithIndirectDescendantLines extends BaseTestList {
+}
+
+
+@Component({template: `
+  <mat-list [disabled]="listDisabled">
+    <mat-list-item [disabled]="firstItemDisabled">One</mat-list-item>
+    <mat-list-item>Two</mat-list-item>
+    <mat-list-item>Three</mat-list-item>
+  </mat-list>`})
+class ListWithDisabledItems {
+  firstItemDisabled = false;
+  listDisabled = false;
 }

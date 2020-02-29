@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {coerceBooleanProperty} from '@angular/cdk/coercion';
+import {BooleanInput, coerceBooleanProperty} from '@angular/cdk/coercion';
 import {DOWN_ARROW} from '@angular/cdk/keycodes';
 import {
   Directive,
@@ -79,7 +79,7 @@ export class MatDatepickerInputEvent<D> {
     {provide: MAT_INPUT_VALUE_ACCESSOR, useExisting: MatDatepickerInput},
   ],
   host: {
-    'aria-haspopup': 'dialog',
+    '[attr.aria-haspopup]': '_datepicker ? "dialog" : null',
     '[attr.aria-owns]': '(_datepicker?.opened && _datepicker.id) || null',
     '[attr.min]': 'min ? _dateAdapter.toIso8601(min) : null',
     '[attr.max]': 'max ? _dateAdapter.toIso8601(max) : null',
@@ -320,6 +320,7 @@ export class MatDatepickerInput<D> implements ControlValueAccessor, OnDestroy, V
   }
 
   _onInput(value: string) {
+    const lastValueWasValid = this._lastValueValid;
     let date = this._dateAdapter.parse(value, this._dateFormats.parse.dateInput);
     this._lastValueValid = !date || this._dateAdapter.isValid(date);
     date = this._getValidDateOrNull(date);
@@ -329,7 +330,7 @@ export class MatDatepickerInput<D> implements ControlValueAccessor, OnDestroy, V
       this._cvaOnChange(date);
       this._valueChange.emit(date);
       this.dateInput.emit(new MatDatepickerInputEvent(this, this._elementRef.nativeElement));
-    } else {
+    } else if (lastValueWasValid !== this._lastValueValid) {
       this._validatorOnChange();
     }
   }
@@ -366,4 +367,9 @@ export class MatDatepickerInput<D> implements ControlValueAccessor, OnDestroy, V
   private _getValidDateOrNull(obj: any): D | null {
     return (this._dateAdapter.isDateInstance(obj) && this._dateAdapter.isValid(obj)) ? obj : null;
   }
+
+  // Accept `any` to avoid conflicts with other directives on `<input>` that
+  // may accept different types.
+  static ngAcceptInputType_value: any;
+  static ngAcceptInputType_disabled: BooleanInput;
 }

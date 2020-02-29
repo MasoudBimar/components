@@ -1,9 +1,11 @@
-@import '@material/switch/functions';
-@import '@material/switch/mixins';
-@import '@material/form-field/mixins';
-@import '@material/ripple/variables';
+@import '@material/switch/functions.import';
+@import '@material/switch/mixins.import';
+@import '@material/switch/variables.import';
+@import '@material/form-field/mixins.import';
+@import '@material/ripple/variables.import';
 @import '../mdc-helpers/mdc-helpers';
 @import '../../material/core/style/layout-common';
+@import '../../cdk/a11y/a11y';
 
 @include mdc-switch-without-ripple($query: $mat-base-styles-query);
 @include mdc-form-field-core-styles($query: $mat-base-styles-query);
@@ -14,6 +16,11 @@
   // The ripple needs extra specificity so the base ripple styling doesn't override its `position`.
   .mat-mdc-slide-toggle-ripple, .mdc-switch__thumb-underlay::before {
     @include mat-fill;
+
+    // Disable pointer events for the ripple container so that it doesn't eat the mouse events meant
+    // for the input. Pointer events can be safely disabled because the ripple trigger element is
+    // the host element.
+    pointer-events: none;
   }
 
   // The MDC switch styles related to the hover state are intertwined with the MDC ripple styles.
@@ -48,6 +55,18 @@
     .mdc-switch__thumb-underlay,
     .mdc-switch__thumb-underlay::before {
       transition: none;
+    }
+  }
+}
+
+
+@include cdk-high-contrast(active, off) {
+  .mat-mdc-slide-toggle-focused {
+    .mdc-switch__track {
+      // Usually 1px would be enough, but MDC reduces the opacity on the
+      // element so we need to make this a bit more prominent.
+      outline: solid 2px;
+      outline-offset: $mdc-switch-track-height / 2;
     }
   }
 }

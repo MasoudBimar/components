@@ -16,15 +16,9 @@
            (change)="_onChangeEvent($event)"
            (click)="_onInputClick($event)">
 
-    <div class="mat-slide-toggle-thumb-container"
-         #thumbContainer
-         (slidestart)="_onDragStart()"
-         (slide)="_onDrag($event)"
-         (slideend)="_onDragEnd()">
-
+    <div class="mat-slide-toggle-thumb-container" #thumbContainer>
       <div class="mat-slide-toggle-thumb"></div>
-
-      <div class="mat-slide-toggle-ripple" mat-ripple
+      <div class="mat-slide-toggle-ripple mat-focus-indicator" mat-ripple
            [matRippleTrigger]="label"
            [matRippleDisabled]="disableRipple || disabled"
            [matRippleCentered]="true"
@@ -33,9 +27,7 @@
 
         <div class="mat-ripple-element mat-slide-toggle-persistent-ripple"></div>
       </div>
-
     </div>
-
 
   </div>
 

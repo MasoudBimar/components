@@ -23,7 +23,7 @@ import {ANIMATION_MODULE_TYPE} from '@angular/platform-browser/animations';
  * @docs-private
  */
 @Directive({
-  selector: 'mat-card-content',
+  selector: 'mat-card-content, [mat-card-content], [matCardContent]',
   host: {'class': 'mat-card-content'}
 })
 export class MatCardContent {}
@@ -152,7 +152,6 @@ export class MatCardAvatar {}
  * - mat-card-footer
  */
 @Component({
-  moduleId: module.id,
   selector: 'mat-card',
   exportAs: 'matCard',
   templateUrl: 'card.html',
@@ -160,7 +159,7 @@ export class MatCardAvatar {}
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    'class': 'mat-card',
+    'class': 'mat-card mat-focus-indicator',
     '[class._mat-animation-noopable]': '_animationMode === "NoopAnimations"',
   }
 })
@@ -176,7 +175,6 @@ export class MatCard {
  * @docs-private
  */
 @Component({
-  moduleId: module.id,
   selector: 'mat-card-header',
   templateUrl: 'card-header.html',
   encapsulation: ViewEncapsulation.None,
@@ -192,7 +190,6 @@ export class MatCardHeader {}
  * @docs-private
  */
 @Component({
-  moduleId: module.id,
   selector: 'mat-card-title-group',
   templateUrl: 'card-title-group.html',
   encapsulation: ViewEncapsulation.None,

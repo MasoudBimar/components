@@ -8,7 +8,7 @@
 
 import {AnimationEvent} from '@angular/animations';
 import {CdkAccordionItem} from '@angular/cdk/accordion';
-import {coerceBooleanProperty} from '@angular/cdk/coercion';
+import {BooleanInput, coerceBooleanProperty} from '@angular/cdk/coercion';
 import {UniqueSelectionDispatcher} from '@angular/cdk/collections';
 import {TemplatePortal} from '@angular/cdk/portal';
 import {
@@ -76,7 +76,6 @@ export const MAT_EXPANSION_PANEL_DEFAULT_OPTIONS =
  * multiple children of an element with the MatAccordion directive attached.
  */
 @Component({
-  moduleId: module.id,
   styleUrls: ['./expansion-panel.css'],
   selector: 'mat-expansion-panel',
   exportAs: 'matExpansionPanel',
@@ -135,10 +134,10 @@ export class MatExpansionPanel extends CdkAccordionItem implements AfterContentI
   accordion: MatAccordionBase;
 
   /** Content that will be rendered lazily. */
-  @ContentChild(MatExpansionPanelContent, {static: false}) _lazyContent: MatExpansionPanelContent;
+  @ContentChild(MatExpansionPanelContent) _lazyContent: MatExpansionPanelContent;
 
   /** Element containing the panel's user-provided content. */
-  @ViewChild('body', {static: false}) _body: ElementRef<HTMLElement>;
+  @ViewChild('body') _body: ElementRef<HTMLElement>;
 
   /** Portal holding the user's content. */
   _portal: TemplatePortal;
@@ -183,10 +182,7 @@ export class MatExpansionPanel extends CdkAccordionItem implements AfterContentI
   /** Determines whether the expansion panel should have spacing between it and its siblings. */
   _hasSpacing(): boolean {
     if (this.accordion) {
-      // We don't need to subscribe to the `stateChanges` of the parent accordion because each time
-      // the [displayMode] input changes, the change detection will also cover the host bindings
-      // of this expansion panel.
-      return (this.expanded ? this.accordion.displayMode : this._getExpandedState()) === 'default';
+      return this.expanded && this.accordion.displayMode === 'default';
     }
     return false;
   }
@@ -194,6 +190,21 @@ export class MatExpansionPanel extends CdkAccordionItem implements AfterContentI
   /** Gets the expanded state string. */
   _getExpandedState(): MatExpansionPanelState {
     return this.expanded ? 'expanded' : 'collapsed';
+  }
+
+  /** Toggles the expanded state of the expansion panel. */
+  toggle(): void {
+    this.expanded = !this.expanded;
+  }
+
+  /** Sets the expanded state of the expansion panel to false. */
+  close(): void {
+    this.expanded = false;
+  }
+
+  /** Sets the expanded state of the expansion panel to true. */
+  open(): void {
+    this.expanded = true;
   }
 
   ngAfterContentInit() {
@@ -229,6 +240,10 @@ export class MatExpansionPanel extends CdkAccordionItem implements AfterContentI
 
     return false;
   }
+
+  static ngAcceptInputType_hideToggle: BooleanInput;
+  static ngAcceptInputType_expanded: BooleanInput;
+  static ngAcceptInputType_disabled: BooleanInput;
 }
 
 @Directive({

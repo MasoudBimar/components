@@ -36,7 +36,7 @@ describe('MatCalendarBody', () => {
       fixture = TestBed.createComponent(StandardCalendarBody);
       fixture.detectChanges();
 
-      const calendarBodyDebugElement = fixture.debugElement.query(By.directive(MatCalendarBody));
+      const calendarBodyDebugElement = fixture.debugElement.query(By.directive(MatCalendarBody))!;
       calendarBodyNativeElement = calendarBodyDebugElement.nativeElement;
       testComponent = fixture.componentInstance;
 
@@ -104,6 +104,11 @@ describe('MatCalendarBody', () => {
       expect((cellEls[1] as HTMLElement).innerText.trim()).toBe('2');
       expect(cellEls[0].classList).not.toContain('even');
       expect(cellEls[1].classList).toContain('even');
+    });
+
+    it('should have a focus indicator', () => {
+      expect(cellEls.every(element => element.classList.contains('mat-focus-indicator')))
+          .toBe(true);
     });
 
   });

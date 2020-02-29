@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+import {BooleanInput} from '@angular/cdk/coercion';
 import {
   ChangeDetectorRef,
   Directive,
@@ -35,12 +36,11 @@ import {Subject} from 'rxjs';
 })
 export class MatChipAvatar {
   constructor(private _changeDetectorRef: ChangeDetectorRef,
-              private _elementRef: ElementRef) {}
+              private _elementRef: ElementRef<HTMLElement>) {}
 
   /** Sets whether the given CSS class should be applied to the leading icon. */
   setClass(cssClass: string, active: boolean) {
-    const element = this._elementRef.nativeElement;
-    active ? element.addClass(cssClass) : element.removeClass(cssClass);
+    this._elementRef.nativeElement.classList.toggle(cssClass, active);
     this._changeDetectorRef.markForCheck();
   }
 }
@@ -58,6 +58,16 @@ export class MatChipAvatar {
   }
 })
 export class MatChipTrailingIcon {
+  constructor(public _elementRef: ElementRef) {}
+
+  focus() {
+    this._elementRef.nativeElement.focus();
+  }
+
+  /** Sets an attribute on the icon. */
+  setAttribute(name: string, value: string) {
+    this._elementRef.nativeElement.setAttribute(name, value);
+  }
 }
 
 /**
@@ -65,8 +75,8 @@ export class MatChipTrailingIcon {
  * @docs-private
  */
 class MatChipRemoveBase extends MatChipTrailingIcon {
-  constructor(public _elementRef: ElementRef) {
-    super();
+  constructor(_elementRef: ElementRef) {
+    super(_elementRef);
   }
 }
 
@@ -74,7 +84,7 @@ const _MatChipRemoveMixinBase:
   CanDisableCtor &
   HasTabIndexCtor &
   typeof MatChipRemoveBase =
-    mixinTabIndex(mixinDisabled(MatChipRemoveBase));
+    mixinTabIndex(mixinDisabled(MatChipRemoveBase), 0);
 
 /**
  * Directive to remove the parent chip when the trailing icon is clicked or
@@ -85,20 +95,25 @@ const _MatChipRemoveMixinBase:
  *
  * Example:
  *
- *     `<mat-chip>
- *       <mat-icon matChipRemove>cancel</mat-icon>
- *     </mat-chip>`
+ * ```
+ * <mat-chip>
+ *   <mat-icon matChipRemove>cancel</mat-icon>
+ * </mat-chip>
+ * ```
  */
 @Directive({
   selector: '[matChipRemove]',
   inputs: ['disabled', 'tabIndex'],
   host: {
-    'class':
-      'mat-mdc-chip-remove mat-mdc-chip-trailing-icon mdc-chip__icon mdc-chip__icon--trailing',
+    'class': `mat-mdc-chip-remove mat-mdc-chip-trailing-icon mat-mdc-focus-indicator
+        mdc-chip__icon mdc-chip__icon--trailing`,
     '[tabIndex]': 'tabIndex',
     'role': 'button',
     '(click)': 'interaction.next($event)',
     '(keydown)': 'interaction.next($event)',
+
+    // We need to remove this explicitly, because it gets inherited from MatChipTrailingIcon.
+    '[attr.aria-hidden]': 'null',
   }
 })
 export class MatChipRemove extends _MatChipRemoveMixinBase implements CanDisable, HasTabIndex {
@@ -108,7 +123,13 @@ export class MatChipRemove extends _MatChipRemoveMixinBase implements CanDisable
    */
   interaction: Subject<MouseEvent | KeyboardEvent> = new Subject<MouseEvent | KeyboardEvent>();
 
-  constructor(_elementRef: ElementRef) {
-    super(_elementRef);
+  constructor(elementRef: ElementRef) {
+    super(elementRef);
+
+    if (elementRef.nativeElement.nodeName === 'BUTTON') {
+      elementRef.nativeElement.setAttribute('type', 'button');
+    }
   }
+
+  static ngAcceptInputType_disabled: BooleanInput;
 }

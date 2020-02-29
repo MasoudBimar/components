@@ -30,6 +30,10 @@ export const DEV_APP_ROUTES: Routes = [
   {path: 'card', loadChildren: 'card/card-demo-module#CardDemoModule'},
   {path: 'checkbox', loadChildren: 'checkbox/checkbox-demo-module#CheckboxDemoModule'},
   {path: 'chips', loadChildren: 'chips/chips-demo-module#ChipsDemoModule'},
+  {
+    path: 'column-resize',
+    loadChildren: 'column-resize/column-resize-demo-module#ColumnResizeDemoModule'
+  },
   {path: 'datepicker', loadChildren: 'datepicker/datepicker-demo-module#DatepickerDemoModule'},
   {path: 'dialog', loadChildren: 'dialog/dialog-demo-module#DialogDemoModule'},
   {path: 'drawer', loadChildren: 'drawer/drawer-demo-module#DrawerDemoModule'},
@@ -39,7 +43,11 @@ export const DEV_APP_ROUTES: Routes = [
     path: 'focus-origin',
     loadChildren: 'focus-origin/focus-origin-demo-module#FocusOriginDemoModule'
   },
-  {path: 'gestures', loadChildren: 'gestures/gestures-demo-module#GesturesDemoModule'},
+  {
+    path: 'focus-trap',
+    loadChildren: 'focus-trap/focus-trap-demo-module#FocusTrapDemoModule'
+  },
+  {path: 'google-map', loadChildren: 'google-map/google-map-demo-module#GoogleMapDemoModule'},
   {path: 'grid-list', loadChildren: 'grid-list/grid-list-demo-module#GridListDemoModule'},
   {path: 'icon', loadChildren: 'icon/icon-demo-module#IconDemoModule'},
   {path: 'input', loadChildren: 'input/input-demo-module#InputDemoModule'},
@@ -54,13 +62,25 @@ export const DEV_APP_ROUTES: Routes = [
     path: 'mdc-checkbox',
     loadChildren: 'mdc-checkbox/mdc-checkbox-demo-module#MdcCheckboxDemoModule'
   },
+  {
+    path: 'mdc-progress-bar',
+    loadChildren: 'mdc-progress-bar/mdc-progress-bar-demo-module#MdcProgressBarDemoModule'
+  },
   {path: 'mdc-chips', loadChildren: 'mdc-chips/mdc-chips-demo-module#MdcChipsDemoModule'},
+  {path: 'mdc-input', loadChildren: 'mdc-input/mdc-input-demo-module#MdcInputDemoModule'},
+  {path: 'mdc-list', loadChildren: 'mdc-list/mdc-list-demo-module#MdcListDemoModule'},
   {path: 'mdc-menu', loadChildren: 'mdc-menu/mdc-menu-demo-module#MdcMenuDemoModule'},
   {path: 'mdc-radio', loadChildren: 'mdc-radio/mdc-radio-demo-module#MdcRadioDemoModule'},
+  {
+    path: 'mdc-snackbar',
+    loadChildren: 'mdc-snackbar/mdc-snackbar-demo-module#MdcSnackbarDemoModule'
+  },
   {
     path: 'mdc-slide-toggle',
     loadChildren: 'mdc-slide-toggle/mdc-slide-toggle-demo-module#MdcSlideToggleDemoModule'
   },
+  {path: 'mdc-slider', loadChildren: 'mdc-slider/mdc-slider-demo-module#MdcSliderDemoModule'},
+  {path: 'mdc-table', loadChildren: 'mdc-table/mdc-table-demo-module#MdcTableDemoModule'},
   {path: 'mdc-tabs', loadChildren: 'mdc-tabs/mdc-tabs-demo-module#MdcTabsDemoModule'},
   {path: 'menu', loadChildren: 'menu/menu-demo-module#MenuDemoModule'},
   {path: 'paginator', loadChildren: 'paginator/paginator-demo-module#PaginatorDemoModule'},
@@ -103,6 +123,10 @@ export const DEV_APP_ROUTES: Routes = [
   {
     path: 'virtual-scroll',
     loadChildren: 'virtual-scroll/virtual-scroll-demo-module#VirtualScrollDemoModule'
+  },
+  {
+    path: 'youtube-player',
+    loadChildren: 'youtube-player/youtube-player-demo-module#YouTubePlayerDemoModule',
   },
   {path: 'examples', loadChildren: 'examples-page/examples-page-module#ExamplesPageModule'},
   {path: '**', component: DevApp404},

@@ -1,12 +1,13 @@
 package(default_visibility = ["//visibility:public"])
 
-load("@io_bazel_rules_sass//:defs.bzl", "sass_binary", "sass_library")
 load(
     "//tools:defaults.bzl",
     "markdown_to_html",
     "ng_module",
     "ng_test_library",
     "ng_web_test_suite",
+    "sass_binary",
+    "sass_library",
 )
 
 ng_module(
@@ -18,7 +19,6 @@ ng_module(
     assets = [":table.css"],
     module_name = "@angular/material/table",
     deps = [
-        "@npm//@angular/common",
         "@npm//@angular/core",
         "@npm//rxjs",
         "//src/cdk/coercion",

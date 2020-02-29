@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {coerceBooleanProperty} from '@angular/cdk/coercion';
+import {BooleanInput, coerceBooleanProperty} from '@angular/cdk/coercion';
 import {
   AfterContentInit,
   Attribute,
@@ -36,7 +36,6 @@ export class MatDatepickerToggleIcon {}
 
 
 @Component({
-  moduleId: module.id,
   selector: 'mat-datepicker-toggle',
   templateUrl: 'datepicker-toggle.html',
   styleUrls: ['datepicker-toggle.css'],
@@ -44,7 +43,7 @@ export class MatDatepickerToggleIcon {}
     'class': 'mat-datepicker-toggle',
     // Always set the tabindex to -1 so that it doesn't overlap with any custom tabindex the
     // consumer may have provided, while still being able to receive focus.
-    '[attr.tabindex]': '-1',
+    '[attr.tabindex]': 'disabled ? null : -1',
     '[class.mat-datepicker-toggle-active]': 'datepicker && datepicker.opened',
     '[class.mat-accent]': 'datepicker && datepicker.color === "accent"',
     '[class.mat-warn]': 'datepicker && datepicker.color === "warn"',
@@ -81,10 +80,10 @@ export class MatDatepickerToggle<D> implements AfterContentInit, OnChanges, OnDe
   @Input() disableRipple: boolean;
 
   /** Custom icon set by the consumer. */
-  @ContentChild(MatDatepickerToggleIcon, {static: false}) _customIcon: MatDatepickerToggleIcon;
+  @ContentChild(MatDatepickerToggleIcon) _customIcon: MatDatepickerToggleIcon;
 
   /** Underlying button element. */
-  @ViewChild('button', {static: false}) _button: MatButton;
+  @ViewChild('button') _button: MatButton;
 
   constructor(
     public _intl: MatDatepickerIntl,
@@ -132,4 +131,6 @@ export class MatDatepickerToggle<D> implements AfterContentInit, OnChanges, OnDe
       datepickerToggled
     ).subscribe(() => this._changeDetectorRef.markForCheck());
   }
+
+  static ngAcceptInputType_disabled: BooleanInput;
 }

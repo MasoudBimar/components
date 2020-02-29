@@ -10,7 +10,6 @@ import {Component} from '@angular/core';
 
 
 @Component({
-  moduleId: module.id,
   selector: 'list-demo',
   templateUrl: 'list-demo.html',
   styleUrls: ['list-demo.css'],
@@ -70,6 +69,8 @@ export class ListDemo {
     this.selectedOptions = values;
     this.modelChangeEventCount++;
   }
+
+  favoriteOptions: string[] = [];
 
   alertItem(msg: string) {
     alert(msg);

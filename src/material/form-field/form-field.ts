@@ -7,7 +7,7 @@
  */
 
 import {Directionality} from '@angular/cdk/bidi';
-import {coerceBooleanProperty} from '@angular/cdk/coercion';
+import {BooleanInput, coerceBooleanProperty} from '@angular/cdk/coercion';
 import {
   AfterContentChecked,
   AfterContentInit,
@@ -30,7 +30,6 @@ import {
 } from '@angular/core';
 import {
   CanColor, CanColorCtor,
-  FloatLabelType,
   LabelOptions,
   MAT_LABEL_GLOBAL_OPTIONS,
   mixinColor,
@@ -78,12 +77,21 @@ const _MatFormFieldMixinBase: CanColorCtor & typeof MatFormFieldBase =
 /** Possible appearance styles for the form field. */
 export type MatFormFieldAppearance = 'legacy' | 'standard' | 'fill' | 'outline';
 
+/** Possible values for the "floatLabel" form-field input. */
+export type FloatLabelType = 'always' | 'never' | 'auto';
+
 /**
  * Represents the default options for the form field that can be configured
  * using the `MAT_FORM_FIELD_DEFAULT_OPTIONS` injection token.
  */
 export interface MatFormFieldDefaultOptions {
   appearance?: MatFormFieldAppearance;
+  hideRequiredMarker?: boolean;
+  /**
+   * Whether the label for form-fields should by default float `always`,
+   * `never`, or `auto` (only when necessary).
+   */
+  floatLabel?: FloatLabelType;
 }
 
 /**
@@ -96,7 +104,6 @@ export const MAT_FORM_FIELD_DEFAULT_OPTIONS =
 
 /** Container for form controls that applies Material Design styling and behavior. */
 @Component({
-  moduleId: module.id,
   selector: 'mat-form-field',
   exportAs: 'matFormField',
   templateUrl: 'form-field.html',
@@ -222,7 +229,7 @@ export class MatFormField extends _MatFormFieldMixinBase
   }
   set floatLabel(value: FloatLabelType) {
     if (value !== this._floatLabel) {
-      this._floatLabel = value || this._labelOptions.float || 'auto';
+      this._floatLabel = value || this._getDefaultFloatLabelState();
       this._changeDetectorRef.markForCheck();
     }
   }
@@ -235,17 +242,17 @@ export class MatFormField extends _MatFormFieldMixinBase
    * @deprecated
    * @breaking-change 8.0.0
    */
-  @ViewChild('underline', {static: false}) underlineRef: ElementRef;
+  @ViewChild('underline') underlineRef: ElementRef;
 
   @ViewChild('connectionContainer', {static: true}) _connectionContainerRef: ElementRef;
-  @ViewChild('inputContainer', {static: false}) _inputContainerRef: ElementRef;
-  @ViewChild('label', {static: false}) private _label: ElementRef;
+  @ViewChild('inputContainer') _inputContainerRef: ElementRef;
+  @ViewChild('label') private _label: ElementRef;
 
-  @ContentChild(MatFormFieldControl, {static: false}) _controlNonStatic: MatFormFieldControl<any>;
+  @ContentChild(MatFormFieldControl) _controlNonStatic: MatFormFieldControl<any>;
   @ContentChild(MatFormFieldControl, {static: true}) _controlStatic: MatFormFieldControl<any>;
   get _control() {
-    // TODO(crisbeto): we need this hacky workaround in order to support both Ivy
-    // and ViewEngine. We should clean this up once Ivy is the default renderer.
+    // TODO(crisbeto): we need this workaround in order to support both Ivy and ViewEngine.
+    //  We should clean this up once Ivy is the default renderer.
     return this._explicitFormFieldControl || this._controlNonStatic || this._controlStatic;
   }
   set _control(value) {
@@ -253,17 +260,17 @@ export class MatFormField extends _MatFormFieldMixinBase
   }
   private _explicitFormFieldControl: MatFormFieldControl<any>;
 
-  @ContentChild(MatLabel, {static: false}) _labelChildNonStatic: MatLabel;
+  @ContentChild(MatLabel) _labelChildNonStatic: MatLabel;
   @ContentChild(MatLabel, {static: true}) _labelChildStatic: MatLabel;
   get _labelChild() {
     return this._labelChildNonStatic || this._labelChildStatic;
   }
 
-  @ContentChild(MatPlaceholder, {static: false}) _placeholderChild: MatPlaceholder;
-  @ContentChildren(MatError) _errorChildren: QueryList<MatError>;
-  @ContentChildren(MatHint) _hintChildren: QueryList<MatHint>;
-  @ContentChildren(MatPrefix) _prefixChildren: QueryList<MatPrefix>;
-  @ContentChildren(MatSuffix) _suffixChildren: QueryList<MatSuffix>;
+  @ContentChild(MatPlaceholder) _placeholderChild: MatPlaceholder;
+  @ContentChildren(MatError, {descendants: true}) _errorChildren: QueryList<MatError>;
+  @ContentChildren(MatHint, {descendants: true}) _hintChildren: QueryList<MatHint>;
+  @ContentChildren(MatPrefix, {descendants: true}) _prefixChildren: QueryList<MatPrefix>;
+  @ContentChildren(MatSuffix, {descendants: true}) _suffixChildren: QueryList<MatSuffix>;
 
   constructor(
       public _elementRef: ElementRef, private _changeDetectorRef: ChangeDetectorRef,
@@ -275,11 +282,13 @@ export class MatFormField extends _MatFormFieldMixinBase
     super(_elementRef);
 
     this._labelOptions = labelOptions ? labelOptions : {};
-    this.floatLabel = this._labelOptions.float || 'auto';
+    this.floatLabel = this._getDefaultFloatLabelState();
     this._animationsEnabled = _animationMode !== 'NoopAnimations';
 
     // Set the default through here so we invoke the setter on the first run.
     this.appearance = (_defaults && _defaults.appearance) ? _defaults.appearance : 'legacy';
+    this._hideRequiredMarker = (_defaults && _defaults.hideRequiredMarker != null) ?
+        _defaults.hideRequiredMarker : false;
   }
 
   /**
@@ -343,7 +352,15 @@ export class MatFormField extends _MatFormFieldMixinBase
     });
 
     if (this._dir) {
-      this._dir.change.pipe(takeUntil(this._destroyed)).subscribe(() => this.updateOutlineGap());
+      this._dir.change.pipe(takeUntil(this._destroyed)).subscribe(() => {
+        if (typeof requestAnimationFrame === 'function') {
+          this._ngZone.runOutsideAngular(() => {
+            requestAnimationFrame(() => this.updateOutlineGap());
+          });
+        } else {
+          this.updateOutlineGap();
+        }
+      });
     }
   }
 
@@ -458,6 +475,11 @@ export class MatFormField extends _MatFormFieldMixinBase
     }
   }
 
+  /** Gets the default float label state. */
+  private _getDefaultFloatLabelState(): FloatLabelType {
+    return (this._defaults && this._defaults.floatLabel) || this._labelOptions.float || 'auto';
+  }
+
   /**
    * Sets the list of element IDs that describe the child control. This allows the control to update
    * its `aria-describedby` attribute accordingly.
@@ -514,7 +536,7 @@ export class MatFormField extends _MatFormFieldMixinBase
     }
     // If the element is not present in the DOM, the outline gap will need to be calculated
     // the next time it is checked and in the DOM.
-    if (!document.documentElement!.contains(this._elementRef.nativeElement)) {
+    if (!this._isAttachedToDOM()) {
       this._outlineGapCalculationNeededImmediately = true;
       return;
     }
@@ -553,10 +575,10 @@ export class MatFormField extends _MatFormFieldMixinBase
     }
 
     for (let i = 0; i < startEls.length; i++) {
-      startEls.item(i).style.width = `${startWidth}px`;
+      startEls[i].style.width = `${startWidth}px`;
     }
     for (let i = 0; i < gapEls.length; i++) {
-      gapEls.item(i).style.width = `${gapWidth}px`;
+      gapEls[i].style.width = `${gapWidth}px`;
     }
 
     this._outlineGapCalculationNeededOnStable =
@@ -565,6 +587,24 @@ export class MatFormField extends _MatFormFieldMixinBase
 
   /** Gets the start end of the rect considering the current directionality. */
   private _getStartEnd(rect: ClientRect): number {
-    return this._dir && this._dir.value === 'rtl' ? rect.right : rect.left;
+    return (this._dir && this._dir.value === 'rtl') ? rect.right : rect.left;
   }
+
+  /** Checks whether the form field is attached to the DOM. */
+  private _isAttachedToDOM(): boolean {
+    const element: HTMLElement = this._elementRef.nativeElement;
+
+    if (element.getRootNode) {
+      const rootNode = element.getRootNode();
+      // If the element is inside the DOM the root node will be either the document
+      // or the closest shadow root, otherwise it'll be the element itself.
+      return rootNode && rootNode !== element;
+    }
+
+    // Otherwise fall back to checking if it's in the document. This doesn't account for
+    // shadow DOM, however browser that support shadow DOM should support `getRootNode` as well.
+    return document.documentElement!.contains(element);
+  }
+
+  static ngAcceptInputType_hideRequiredMarker: BooleanInput;
 }

@@ -30,11 +30,14 @@ import {
   Output,
   ViewEncapsulation,
   ViewChild,
+  OnDestroy,
 } from '@angular/core';
 import {DateAdapter, MAT_DATE_FORMATS, MatDateFormats} from '@angular/material/core';
 import {Directionality} from '@angular/cdk/bidi';
 import {MatCalendarBody, MatCalendarCell, MatCalendarCellCssClasses} from './calendar-body';
 import {createMissingDateImplError} from './datepicker-errors';
+import {Subscription} from 'rxjs';
+import {startWith} from 'rxjs/operators';
 
 
 const DAYS_PER_WEEK = 7;
@@ -45,14 +48,15 @@ const DAYS_PER_WEEK = 7;
  * @docs-private
  */
 @Component({
-  moduleId: module.id,
   selector: 'mat-month-view',
   templateUrl: 'month-view.html',
   exportAs: 'matMonthView',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class MatMonthView<D> implements AfterContentInit {
+export class MatMonthView<D> implements AfterContentInit, OnDestroy {
+  private _rerenderSubscription = Subscription.EMPTY;
+
   /**
    * The date to display in this month view (everything other than the month and year is ignored).
    */
@@ -110,7 +114,7 @@ export class MatMonthView<D> implements AfterContentInit {
   @Output() readonly activeDateChange: EventEmitter<D> = new EventEmitter<D>();
 
   /** The body of calendar table */
-  @ViewChild(MatCalendarBody, {static: false}) _matCalendarBody: MatCalendarBody;
+  @ViewChild(MatCalendarBody) _matCalendarBody: MatCalendarBody;
 
   /** The label for this month (e.g. "January 2017"). */
   _monthLabel: string;
@@ -144,21 +148,17 @@ export class MatMonthView<D> implements AfterContentInit {
       throw createMissingDateImplError('MAT_DATE_FORMATS');
     }
 
-    const firstDayOfWeek = this._dateAdapter.getFirstDayOfWeek();
-    const narrowWeekdays = this._dateAdapter.getDayOfWeekNames('narrow');
-    const longWeekdays = this._dateAdapter.getDayOfWeekNames('long');
-
-    // Rotate the labels for days of the week based on the configured first day of the week.
-    let weekdays = longWeekdays.map((long, i) => {
-      return {long, narrow: narrowWeekdays[i]};
-    });
-    this._weekdays = weekdays.slice(firstDayOfWeek).concat(weekdays.slice(0, firstDayOfWeek));
-
     this._activeDate = this._dateAdapter.today();
   }
 
   ngAfterContentInit() {
-    this._init();
+    this._rerenderSubscription = this._dateAdapter.localeChanges
+      .pipe(startWith(null))
+      .subscribe(() => this._init());
+  }
+
+  ngOnDestroy() {
+    this._rerenderSubscription.unsubscribe();
   }
 
   /** Handles when a new date is selected. */
@@ -252,6 +252,7 @@ export class MatMonthView<D> implements AfterContentInit {
         (DAYS_PER_WEEK + this._dateAdapter.getDayOfWeek(firstOfMonth) -
          this._dateAdapter.getFirstDayOfWeek()) % DAYS_PER_WEEK;
 
+    this._initWeekdays();
     this._createWeekCells();
     this._changeDetectorRef.markForCheck();
   }
@@ -259,6 +260,19 @@ export class MatMonthView<D> implements AfterContentInit {
   /** Focuses the active cell after the microtask queue is empty. */
   _focusActiveCell() {
     this._matCalendarBody._focusActiveCell();
+  }
+
+  /** Initializes the weekdays. */
+  private _initWeekdays() {
+    const firstDayOfWeek = this._dateAdapter.getFirstDayOfWeek();
+    const narrowWeekdays = this._dateAdapter.getDayOfWeekNames('narrow');
+    const longWeekdays = this._dateAdapter.getDayOfWeekNames('long');
+
+    // Rotate the labels for days of the week based on the configured first day of the week.
+    let weekdays = longWeekdays.map((long, i) => {
+        return {long, narrow: narrowWeekdays[i]};
+    });
+    this._weekdays = weekdays.slice(firstDayOfWeek).concat(weekdays.slice(0, firstDayOfWeek));
   }
 
   /** Creates MatCalendarCells for the dates in this month. */
@@ -286,9 +300,9 @@ export class MatMonthView<D> implements AfterContentInit {
   /** Date filter for the month */
   private _shouldEnableDate(date: D): boolean {
     return !!date &&
-        (!this.dateFilter || this.dateFilter(date)) &&
         (!this.minDate || this._dateAdapter.compareDate(date, this.minDate) >= 0) &&
-        (!this.maxDate || this._dateAdapter.compareDate(date, this.maxDate) <= 0);
+        (!this.maxDate || this._dateAdapter.compareDate(date, this.maxDate) <= 0) &&
+        (!this.dateFilter || this.dateFilter(date));
   }
 
   /**

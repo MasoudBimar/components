@@ -19,7 +19,7 @@ import {
   ViewContainerRef,
   HostListener,
 } from '@angular/core';
-import {fromEvent, fromEventPattern, merge, ReplaySubject} from 'rxjs';
+import {fromEvent, fromEventPattern, merge, Subject} from 'rxjs';
 import {
   filter,
   map,
@@ -65,7 +65,7 @@ const MOUSE_MOVE_THROTTLE_TIME_MS = 10;
   providers: [EditEventDispatcher, EditServices],
 })
 export class CdkEditable implements AfterViewInit, OnDestroy {
-  protected readonly destroyed = new ReplaySubject<void>();
+  protected readonly destroyed = new Subject<void>();
 
   constructor(
       protected readonly elementRef: ElementRef,
@@ -148,15 +148,16 @@ export class CdkEditable implements AfterViewInit, OnDestroy {
 }
 
 const POPOVER_EDIT_HOST_BINDINGS = {
-  'tabIndex': '0',
+  '[attr.tabindex]': 'disabled ? null : 0',
   'class': 'cdk-popover-edit-cell',
-  '[attr.aria-haspopup]': 'true',
+  '[attr.aria-haspopup]': '!disabled',
 };
 
 const POPOVER_EDIT_INPUTS = [
   'template: cdkPopoverEdit',
   'context: cdkPopoverEditContext',
   'colspan: cdkPopoverEditColspan',
+  'disabled: cdkPopoverEditDisabled',
 ];
 
 /**
@@ -200,9 +201,25 @@ export class CdkPopoverEdit<C> implements AfterViewInit, OnDestroy {
   }
   private _colspan: CdkPopoverEditColspan = {};
 
+  /** Whether popover edit is disabled for this cell. */
+  get disabled(): boolean {
+    return this._disabled;
+  }
+  set disabled(value: boolean) {
+    this._disabled = value;
+
+    if (value) {
+      this.services.editEventDispatcher.doneEditingCell(this.elementRef.nativeElement!);
+      this.services.editEventDispatcher.disabledCells.set(this.elementRef.nativeElement!, true);
+    } else {
+      this.services.editEventDispatcher.disabledCells.delete(this.elementRef.nativeElement!);
+    }
+  }
+  private _disabled = false;
+
   protected focusTrap?: FocusTrap;
   protected overlayRef?: OverlayRef;
-  protected readonly destroyed = new ReplaySubject<void>();
+  protected readonly destroyed = new Subject<void>();
 
   constructor(
       protected readonly services: EditServices, protected readonly elementRef: ElementRef,
@@ -374,7 +391,7 @@ export class CdkPopoverEditTabOut<C> extends CdkPopoverEdit<C> {
   selector: '[cdkRowHoverContent]',
 })
 export class CdkRowHoverContent implements AfterViewInit, OnDestroy {
-  protected readonly destroyed = new ReplaySubject<void>();
+  protected readonly destroyed = new Subject<void>();
   protected viewRef: EmbeddedViewRef<any>|null = null;
 
   private _row?: Element;
@@ -439,8 +456,10 @@ export class CdkRowHoverContent implements AfterViewInit, OnDestroy {
             if (!this.viewRef) {
               this.viewRef = this.viewContainerRef.createEmbeddedView(this.templateRef, {});
               this.initElement(this.viewRef.rootNodes[0] as HTMLElement);
+              this.viewRef.markForCheck();
             } else if (this.viewContainerRef.indexOf(this.viewRef) === -1) {
               this.viewContainerRef.insert(this.viewRef!);
+              this.viewRef.markForCheck();
             }
 
             if (eventState === HoverContentState.ON) {

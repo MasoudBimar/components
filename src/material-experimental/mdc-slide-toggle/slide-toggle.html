@@ -1,16 +1,16 @@
 <div class="mdc-form-field"
      [class.mdc-form-field--align-end]="labelPosition == 'before'">
-  <div [ngClass]="_classes" #switch>
+  <div class="mdc-switch" #switch>
     <div class="mdc-switch__track"></div>
     <div class="mdc-switch__thumb-underlay">
-      <div class="mat-mdc-slide-toggle-ripple" mat-ripple
+      <div class="mat-mdc-slide-toggle-ripple mat-mdc-focus-indicator" mat-ripple
         [matRippleTrigger]="switch"
         [matRippleDisabled]="disableRipple || disabled"
         [matRippleCentered]="true"
         [matRippleRadius]="24"
         [matRippleAnimation]="_rippleAnimation"></div>
       <div class="mdc-switch__thumb">
-        <input #input class="mdc-switch__native-control" type="checkbox"
+          <input #input class="mdc-switch__native-control" type="checkbox"
             role="switch"
             [id]="inputId"
             [required]="required"
@@ -29,9 +29,7 @@
     </div>
   </div>
 
-  <label #label
-         [for]="inputId"
-         (click)="$event.stopPropagation()">
+  <label [for]="inputId" (click)="$event.stopPropagation()">
     <ng-content></ng-content>
   </label>
 </div>

@@ -10,17 +10,19 @@ import {Component, ChangeDetectionStrategy, ViewEncapsulation} from '@angular/co
 import {MatMenuItem as BaseMatMenuItem} from '@angular/material/menu';
 
 /**
- * This directive is intended to be used inside an mat-menu tag.
- * It exists mostly to set the role attribute.
+ * Single item inside of a `mat-menu`. Provides the menu item styling and accessibility treatment.
  */
 @Component({
-  moduleId: module.id,
   selector: '[mat-menu-item]',
   exportAs: 'matMenuItem',
   inputs: ['disabled', 'disableRipple'],
   host: {
     '[attr.role]': 'role',
-    'class': 'mat-mdc-menu-item',
+     // The MatMenuItem parent class adds `mat-menu-item` and `mat-focus-indicator` to the CSS
+     // classlist, but these should not be added for this MDC equivalent menu item.
+    '[class.mat-menu-item]': 'false',
+    '[class.mat-focus-indicator]': 'false',
+    'class': 'mat-mdc-menu-item mat-mdc-focus-indicator',
     '[class.mat-mdc-menu-item-highlighted]': '_highlighted',
     '[class.mat-mdc-menu-item-submenu-trigger]': '_triggersSubmenu',
     '[attr.tabindex]': '_getTabIndex()',
@@ -34,4 +36,5 @@ import {MatMenuItem as BaseMatMenuItem} from '@angular/material/menu';
     {provide: BaseMatMenuItem, useExisting: MatMenuItem},
   ]
 })
-export class MatMenuItem extends BaseMatMenuItem {}
+export class MatMenuItem extends BaseMatMenuItem {
+}

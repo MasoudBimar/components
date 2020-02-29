@@ -8,6 +8,7 @@
 import {ElementRef, NgZone} from '@angular/core';
 import {Platform, normalizePassiveListenerOptions} from '@angular/cdk/platform';
 import {isFakeMousedownFromScreenReader} from '@angular/cdk/a11y';
+import {coerceElement} from '@angular/cdk/coercion';
 import {RippleRef, RippleState} from './ripple-ref';
 
 export type RippleConfig = {
@@ -97,12 +98,12 @@ export class RippleRenderer {
 
   constructor(private _target: RippleTarget,
               private _ngZone: NgZone,
-              elementRef: ElementRef<HTMLElement>,
+              elementOrElementRef: HTMLElement | ElementRef<HTMLElement>,
               platform: Platform) {
 
     // Only do anything if we're on the browser.
     if (platform.isBrowser) {
-      this._containerElement = elementRef.nativeElement;
+      this._containerElement = coerceElement(elementOrElementRef);
 
       // Specify events which need to be registered on the trigger.
       this._triggerEvents
@@ -145,8 +146,12 @@ export class RippleRenderer {
     ripple.style.height = `${radius * 2}px`;
     ripple.style.width = `${radius * 2}px`;
 
-    // If the color is not set, the default CSS color will be used.
-    ripple.style.backgroundColor = config.color || null;
+    // If a custom color has been specified, set it as inline style. If no color is
+    // set, the default color will be applied through the ripple theme styles.
+    if (config.color != null) {
+      ripple.style.backgroundColor = config.color;
+    }
+
     ripple.style.transitionDuration = `${duration}ms`;
 
     this._containerElement.appendChild(ripple);
@@ -226,7 +231,9 @@ export class RippleRenderer {
   }
 
   /** Sets up the trigger event listeners */
-  setupTriggerEvents(element: HTMLElement) {
+  setupTriggerEvents(elementOrElementRef: HTMLElement | ElementRef<HTMLElement>) {
+    const element = coerceElement(elementOrElementRef);
+
     if (!element || element === this._triggerElement) {
       return;
     }

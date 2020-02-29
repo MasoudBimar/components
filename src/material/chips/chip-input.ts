@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {coerceBooleanProperty} from '@angular/cdk/coercion';
+import {BooleanInput, coerceBooleanProperty} from '@angular/cdk/coercion';
 import {Directive, ElementRef, EventEmitter, Inject, Input, OnChanges, Output} from '@angular/core';
 import {hasModifierKey, TAB} from '@angular/cdk/keycodes';
 import {MAT_CHIPS_DEFAULT_OPTIONS, MatChipsDefaultOptions} from './chip-default-options';
@@ -43,6 +43,7 @@ let nextUniqueId = 0;
     '[attr.disabled]': 'disabled || null',
     '[attr.placeholder]': 'placeholder || null',
     '[attr.aria-invalid]': '_chipList && _chipList.ngControl ? _chipList.ngControl.invalid : null',
+    '[attr.aria-required]': '_chipList && _chipList.required || null',
   }
 })
 export class MatChipInput implements MatChipTextControl, OnChanges {
@@ -156,8 +157,8 @@ export class MatChipInput implements MatChipTextControl, OnChanges {
   }
 
   /** Focuses the input. */
-  focus(): void {
-    this._inputElement.focus();
+  focus(options?: FocusOptions): void {
+    this._inputElement.focus(options);
   }
 
   /** Checks whether a keycode is one of the configured separators. */
@@ -170,4 +171,7 @@ export class MatChipInput implements MatChipTextControl, OnChanges {
     const keyCode = event.keyCode;
     return Array.isArray(separators) ? separators.indexOf(keyCode) > -1 : separators.has(keyCode);
   }
+
+  static ngAcceptInputType_addOnBlur: BooleanInput;
+  static ngAcceptInputType_disabled: BooleanInput;
 }

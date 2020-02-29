@@ -39,8 +39,6 @@ module.exports = config => {
       {pattern: 'node_modules/zone.js/dist/jasmine-patch.min.js', included: true, watched: false},
       {pattern: 'node_modules/zone.js/dist/async-test.js', included: true, watched: false},
       {pattern: 'node_modules/zone.js/dist/fake-async-test.js', included: true, watched: false},
-      {pattern: 'node_modules/hammerjs/hammer.min.js', included: true, watched: false},
-      {pattern: 'node_modules/hammerjs/hammer.min.js.map', included: false, watched: false},
       {
         pattern: 'node_modules/moment/min/moment-with-locales.min.js',
         included: false,
@@ -52,12 +50,24 @@ module.exports = config => {
       {pattern: 'node_modules/@angular/**/*', included: false, watched: false},
       {pattern: 'node_modules/rxjs/**/*', included: false, watched: false},
 
-      {pattern: 'test/karma-system-config.js', included: true, watched: false},
+      // The Karma system configuration is built by Bazel. The built System config
+      // is copied into the "dist/" folder so that the Karma config can use it.
+      {pattern: 'dist/karma-system-config.js', included: true, watched: false},
       {pattern: 'test/karma-test-shim.js', included: true, watched: false},
 
-      // Include a Material theme in the test suite.
+      // Needed for exposing the RxJS operators through the RxJS UMD bundle. This
+      // is done for performance reasons since fetching individual files is slow.
+      {pattern: 'tools/system-rxjs-operators.js', included: false, watched: false},
+
+      // Include a Material theme in the test suite. Also include the MDC theme as
+      // karma runs tests for the MDC prototype components as well.
       {
-        pattern: 'dist/packages/**/core/theming/prebuilt/indigo-pink.css',
+        pattern: 'dist/packages/material/core/theming/prebuilt/indigo-pink.css',
+        included: true,
+        watched: true
+      },
+      {
+        pattern: 'dist/packages/material-experimental/mdc-theming/prebuilt/indigo-pink.css',
         included: true,
         watched: true
       },

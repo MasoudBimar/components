@@ -27,7 +27,14 @@ import {
   ViewEncapsulation,
   TrackByFunction
 } from '@angular/core';
-import {BehaviorSubject, Observable, of as observableOf, Subject, Subscription} from 'rxjs';
+import {
+  BehaviorSubject,
+  Observable,
+  of as observableOf,
+  Subject,
+  Subscription,
+  isObservable,
+} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 import {TreeControl} from './control/tree-control';
 import {CdkTreeNodeDef, CdkTreeNodeOutletContext} from './node';
@@ -45,7 +52,6 @@ import {
  * dataNodes with hierarchy. Updates the dataNodes when new data is provided by the data source.
  */
 @Component({
-  moduleId: module.id,
   selector: 'cdk-tree',
   exportAs: 'cdkTree',
   template: `<ng-container cdkTreeNodeOutlet></ng-container>`,
@@ -106,7 +112,11 @@ export class CdkTree<T> implements AfterContentChecked, CollectionViewer, OnDest
   @ViewChild(CdkTreeNodeOutlet, {static: true}) _nodeOutlet: CdkTreeNodeOutlet;
 
   /** The tree node template for the tree */
-  @ContentChildren(CdkTreeNodeDef) _nodeDefs: QueryList<CdkTreeNodeDef<T>>;
+  @ContentChildren(CdkTreeNodeDef, {
+    // We need to use `descendants: true`, because Ivy will no longer match
+    // indirect descendants if it's left as false.
+    descendants: true
+  }) _nodeDefs: QueryList<CdkTreeNodeDef<T>>;
 
   // TODO(tinayuangao): Setup a listener for scrolling, emit the calculated view to viewChange.
   //     Remove the MAX_VALUE in viewChange
@@ -191,7 +201,7 @@ export class CdkTree<T> implements AfterContentChecked, CollectionViewer, OnDest
 
     if (isDataSource(this._dataSource)) {
       dataStream = this._dataSource.connect(this);
-    } else if (this._dataSource instanceof Observable) {
+    } else if (isObservable(this._dataSource)) {
       dataStream = this._dataSource;
     } else if (Array.isArray(this._dataSource)) {
       dataStream = observableOf(this._dataSource);
@@ -363,7 +373,7 @@ export class CdkTreeNode<T> implements FocusableOption, OnDestroy {
       const childrenNodes = this._tree.treeControl.getChildren(this._data);
       if (Array.isArray(childrenNodes)) {
         this._setRoleFromChildren(childrenNodes as T[]);
-      } else if (childrenNodes instanceof Observable) {
+      } else if (isObservable(childrenNodes)) {
         childrenNodes.pipe(takeUntil(this._destroyed))
             .subscribe(children => this._setRoleFromChildren(children));
       }

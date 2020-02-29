@@ -7,7 +7,7 @@
  */
 
 import {FocusMonitor} from '@angular/cdk/a11y';
-import {coerceBooleanProperty} from '@angular/cdk/coercion';
+import {BooleanInput, coerceBooleanProperty} from '@angular/cdk/coercion';
 import {UniqueSelectionDispatcher} from '@angular/cdk/collections';
 import {
   AfterContentInit,
@@ -306,6 +306,9 @@ export class MatRadioGroup implements AfterContentInit, ControlValueAccessor {
     this.disabled = isDisabled;
     this._changeDetector.markForCheck();
   }
+
+  static ngAcceptInputType_disabled: BooleanInput;
+  static ngAcceptInputType_required: BooleanInput;
 }
 
 // Boilerplate for applying mixins to MatRadioButton.
@@ -328,7 +331,6 @@ const _MatRadioButtonMixinBase:
  * A Material design radio-button. Typically placed inside of `<mat-radio-group>` elements.
  */
 @Component({
-  moduleId: module.id,
   selector: 'mat-radio-button',
   templateUrl: 'radio.html',
   styleUrls: ['radio.css'],
@@ -346,6 +348,9 @@ const _MatRadioButtonMixinBase:
     // Needs to be -1 so the `focus` event still fires.
     '[attr.tabindex]': '-1',
     '[attr.id]': 'id',
+    '[attr.aria-label]': 'null',
+    '[attr.aria-labelledby]': 'null',
+    '[attr.aria-describedby]': 'null',
     // Note: under normal conditions focus shouldn't land on this element, however it may be
     // programmatically set, for example inside of a focus trap, in this case we want to forward
     // the focus to the native element.
@@ -431,11 +436,7 @@ export class MatRadioButton extends _MatRadioButtonMixinBase
     return this._disabled || (this.radioGroup !== null && this.radioGroup.disabled);
   }
   set disabled(value: boolean) {
-    const newDisabledState = coerceBooleanProperty(value);
-    if (this._disabled !== newDisabledState) {
-      this._disabled = newDisabledState;
-      this._changeDetector.markForCheck();
-    }
+    this._setDisabled(coerceBooleanProperty(value));
   }
 
   /** Whether the radio button is required. */
@@ -486,11 +487,11 @@ export class MatRadioButton extends _MatRadioButtonMixinBase
   private _removeUniqueSelectionListener: () => void = () => {};
 
   /** The native `<input type=radio>` element */
-  @ViewChild('input', {static: false}) _inputElement: ElementRef<HTMLInputElement>;
+  @ViewChild('input') _inputElement: ElementRef<HTMLInputElement>;
 
   constructor(@Optional() radioGroup: MatRadioGroup,
               elementRef: ElementRef,
-              private _changeDetector: ChangeDetectorRef,
+              protected _changeDetector: ChangeDetectorRef,
               private _focusMonitor: FocusMonitor,
               private _radioDispatcher: UniqueSelectionDispatcher,
               @Optional() @Inject(ANIMATION_MODULE_TYPE) public _animationMode?: string,
@@ -511,8 +512,8 @@ export class MatRadioButton extends _MatRadioButtonMixinBase
   }
 
   /** Focuses the radio button. */
-  focus(): void {
-    this._focusMonitor.focusVia(this._inputElement, 'keyboard');
+  focus(options?: FocusOptions): void {
+    this._focusMonitor.focusVia(this._inputElement, 'keyboard', options);
   }
 
   /**
@@ -592,4 +593,16 @@ export class MatRadioButton extends _MatRadioButtonMixinBase
     }
   }
 
+  /** Sets the disabled state and marks for check if a change occurred. */
+  protected _setDisabled(value: boolean) {
+    if (this._disabled !== value) {
+      this._disabled = value;
+      this._changeDetector.markForCheck();
+    }
+  }
+
+  static ngAcceptInputType_checked: BooleanInput;
+  static ngAcceptInputType_disabled: BooleanInput;
+  static ngAcceptInputType_required: BooleanInput;
+  static ngAcceptInputType_disableRipple: BooleanInput;
 }

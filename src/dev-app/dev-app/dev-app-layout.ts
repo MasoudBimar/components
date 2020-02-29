@@ -7,14 +7,12 @@
  */
 
 import {Directionality} from '@angular/cdk/bidi';
-import {OverlayContainer} from '@angular/cdk/overlay';
 import {ChangeDetectorRef, Component, ElementRef, Inject, ViewEncapsulation} from '@angular/core';
-import {DevAppRippleOptions} from '../ripple/ripple-options';
+import {DevAppRippleOptions} from './ripple-options';
 import {DevAppDirectionality} from './dev-app-directionality';
 
 /** Root component for the dev-app demos. */
 @Component({
-  moduleId: module.id,
   selector: 'dev-app-layout',
   templateUrl: 'dev-app-layout.html',
   styleUrls: ['dev-app-layout.css'],
@@ -22,6 +20,7 @@ import {DevAppDirectionality} from './dev-app-directionality';
 })
 export class DevAppLayout {
   dark = false;
+  strongFocus = false;
   navItems = [
     {name: 'Examples', route: '/examples'},
     {name: 'Autocomplete', route: '/autocomplete'},
@@ -30,17 +29,18 @@ export class DevAppLayout {
     {name: 'Button Toggle', route: '/button-toggle'},
     {name: 'Button', route: '/button'},
     {name: 'Card', route: '/card'},
-    {name: 'Chips', route: '/chips'},
-    {name: 'Connected Overlay', route: '/connected-overlay'},
     {name: 'Checkbox', route: '/checkbox'},
     {name: 'Chips', route: '/chips'},
+    {name: 'Column Resize', route: 'column-resize'},
+    {name: 'Connected Overlay', route: '/connected-overlay'},
     {name: 'Datepicker', route: '/datepicker'},
     {name: 'Dialog', route: '/dialog'},
     {name: 'Drawer', route: '/drawer'},
     {name: 'Drag and Drop', route: '/drag-drop'},
     {name: 'Expansion Panel', route: '/expansion'},
     {name: 'Focus Origin', route: '/focus-origin'},
-    {name: 'Gestures', route: '/gestures'},
+    {name: 'Focus Trap', route: '/focus-trap'},
+    {name: 'Google Map', route: '/google-map'},
     {name: 'Grid List', route: '/grid-list'},
     {name: 'Icon', route: '/icon'},
     {name: 'Input', route: '/input'},
@@ -69,20 +69,25 @@ export class DevAppLayout {
     {name: 'Tree', route: '/tree'},
     {name: 'Typography', route: '/typography'},
     {name: 'Virtual Scrolling', route: '/virtual-scroll'},
+    {name: 'YouTube Player', route: '/youtube-player'},
     {name: 'MDC Button', route: '/mdc-button'},
     {name: 'MDC Card', route: '/mdc-card'},
     {name: 'MDC Checkbox', route: '/mdc-checkbox'},
     {name: 'MDC Chips', route: '/mdc-chips'},
+    {name: 'MDC Input', route: '/mdc-input'},
+    {name: 'MDC List', route: '/mdc-list'},
     {name: 'MDC Menu', route: '/mdc-menu'},
     {name: 'MDC Radio', route: '/mdc-radio'},
+    {name: 'MDC Progress Bar', route: '/mdc-progress-bar'},
     {name: 'MDC Tabs', route: '/mdc-tabs'},
     {name: 'MDC Slide Toggle', route: '/mdc-slide-toggle'},
-
+    {name: 'MDC Slider', route: '/mdc-slider'},
+    {name: 'MDC Snackbar', route: '/mdc-snackbar'},
+    {name: 'MDC Table', route: '/mdc-table'},
   ];
 
   constructor(
-      private _element: ElementRef<HTMLElement>, private _overlayContainer: OverlayContainer,
-      public rippleOptions: DevAppRippleOptions,
+      private _element: ElementRef<HTMLElement>, public rippleOptions: DevAppRippleOptions,
       @Inject(Directionality) public dir: DevAppDirectionality, cdr: ChangeDetectorRef) {
     dir.change.subscribe(() => cdr.markForCheck());
   }
@@ -107,11 +112,21 @@ export class DevAppLayout {
     this.dark = !this.dark;
 
     if (this.dark) {
-      this._element.nativeElement.classList.add(darkThemeClass);
-      this._overlayContainer.getContainerElement().classList.add(darkThemeClass);
+      document.body.classList.add(darkThemeClass);
     } else {
-      this._element.nativeElement.classList.remove(darkThemeClass);
-      this._overlayContainer.getContainerElement().classList.remove(darkThemeClass);
+      document.body.classList.remove(darkThemeClass);
+    }
+  }
+
+  toggleStrongFocus() {
+    const strongFocusClass = 'demo-strong-focus';
+
+    this.strongFocus = !this.strongFocus;
+
+    if (this.strongFocus) {
+      document.body.classList.add(strongFocusClass);
+    } else {
+      document.body.classList.remove(strongFocusClass);
     }
   }
 }

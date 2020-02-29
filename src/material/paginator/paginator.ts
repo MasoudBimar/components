@@ -6,7 +6,12 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {coerceNumberProperty, coerceBooleanProperty} from '@angular/cdk/coercion';
+import {
+  coerceNumberProperty,
+  coerceBooleanProperty,
+  BooleanInput,
+  NumberInput
+} from '@angular/cdk/coercion';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -17,6 +22,9 @@ import {
   OnInit,
   Output,
   ViewEncapsulation,
+  InjectionToken,
+  Inject,
+  Optional,
 } from '@angular/core';
 import {Subscription} from 'rxjs';
 import {MatPaginatorIntl} from './paginator-intl';
@@ -54,6 +62,26 @@ export class PageEvent {
   length: number;
 }
 
+
+/** Object that can be used to configure the default options for the paginator module. */
+export interface MatPaginatorDefaultOptions {
+  /** Number of items to display on a page. By default set to 50. */
+  pageSize?: number;
+
+  /** The set of provided page size options to display to the user. */
+  pageSizeOptions?: number[];
+
+  /** Whether to hide the page size selection UI from the user. */
+  hidePageSize?: boolean;
+
+  /** Whether to show the first/last buttons UI to the user. */
+  showFirstLastButtons?: boolean;
+}
+
+/** Injection token that can be used to provide the default options for the paginator module. */
+export const MAT_PAGINATOR_DEFAULT_OPTIONS =
+    new InjectionToken<MatPaginatorDefaultOptions>('MAT_PAGINATOR_DEFAULT_OPTIONS');
+
 // Boilerplate for applying mixins to MatPaginator.
 /** @docs-private */
 class MatPaginatorBase {}
@@ -66,7 +94,6 @@ const _MatPaginatorBase: CanDisableCtor & HasInitializedCtor & typeof MatPaginat
  * navigational button to go to the previous or next page.
  */
 @Component({
-  moduleId: module.id,
   selector: 'mat-paginator',
   exportAs: 'matPaginator',
   templateUrl: 'paginator.html',
@@ -146,9 +173,31 @@ export class MatPaginator extends _MatPaginatorBase implements OnInit, OnDestroy
   _displayedPageSizeOptions: number[];
 
   constructor(public _intl: MatPaginatorIntl,
-              private _changeDetectorRef: ChangeDetectorRef) {
+              private _changeDetectorRef: ChangeDetectorRef,
+              @Optional() @Inject(MAT_PAGINATOR_DEFAULT_OPTIONS)
+                  defaults?: MatPaginatorDefaultOptions) {
     super();
     this._intlChanges = _intl.changes.subscribe(() => this._changeDetectorRef.markForCheck());
+
+    if (defaults) {
+      const {pageSize, pageSizeOptions, hidePageSize, showFirstLastButtons} = defaults;
+
+      if (pageSize != null) {
+        this._pageSize = pageSize;
+      }
+
+      if (pageSizeOptions != null) {
+        this._pageSizeOptions = pageSizeOptions;
+      }
+
+      if (hidePageSize != null) {
+        this._hidePageSize = hidePageSize;
+      }
+
+      if (showFirstLastButtons != null) {
+        this._showFirstLastButtons = showFirstLastButtons;
+      }
+    }
   }
 
   ngOnInit() {
@@ -283,4 +332,11 @@ export class MatPaginator extends _MatPaginatorBase implements OnInit, OnDestroy
       length: this.length
     });
   }
+
+  static ngAcceptInputType_pageIndex: NumberInput;
+  static ngAcceptInputType_length: NumberInput;
+  static ngAcceptInputType_pageSize: NumberInput;
+  static ngAcceptInputType_hidePageSize: BooleanInput;
+  static ngAcceptInputType_showFirstLastButtons: BooleanInput;
+  static ngAcceptInputType_disabled: BooleanInput;
 }
